@@ -558,7 +558,7 @@ model = MultinomialNB(alpha=0.5)
 model.fit(X_train, y_train)
 
 # Evaluate
-languages = ['en', 'es', 'fr', 'de', 'it', 'nl', 'sv']
+languages = ['de', 'es', 'fr', 'it', 'nl', 'pt', 'sv']
 evaluar_modelo(model, X_val, y_val, languages, 'Validation')
 evaluar_modelo(model, X_test, y_test, languages, 'Test')
 ```

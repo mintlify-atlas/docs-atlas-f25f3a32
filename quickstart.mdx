@@ -193,13 +193,13 @@ class LanguageDetector:
             self.max_length = config['max_length']
         
         # Language mapping
-        self.languages = ['de', 'en', 'es', 'fr', 'it', 'pt', 'sv']
+        self.languages = ['de', 'es', 'fr', 'it', 'nl', 'pt', 'sv']
         self.language_names = {
             'de': 'German',
-            'en': 'English',
             'es': 'Spanish',
             'fr': 'French',
             'it': 'Italian',
+            'nl': 'Dutch',
             'pt': 'Portuguese',
             'sv': 'Swedish'
         }
@@ -317,10 +317,11 @@ detector = LanguageDetector(
 
 # Test detection
 test_cases = [
-    ("This is English", "en"),
     ("Esto es español", "es"),
     ("C'est français", "fr"),
-    ("Das ist Deutsch", "de")
+    ("Das ist Deutsch", "de"),
+    ("Dit is Nederlands", "nl"),
+    ("Questo è italiano", "it")
 ]
 
 for text, expected in test_cases:
