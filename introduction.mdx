@@ -1,0 +1,150 @@
+---
+title: 'Introduction'
+description: 'Automatic language identification system using machine learning and deep learning techniques'
+---
+
+## Overview
+
+The Language Detection System is a comprehensive automatic language identification solution that leverages both traditional machine learning and modern deep learning techniques to classify text across **7 European languages**.
+
+Automatic language identification is a fundamental task in natural language processing (NLP), serving as the first step for many multilingual applications. This system provides a robust foundation for building language-aware applications, content management systems, and multi-language support tools.
+
+## Why Language Detection Matters
+
+Language detection enables:
+
+- **Content Routing**: Automatically directing content to appropriate language-specific processors
+- **Multilingual Support**: Building applications that adapt to user language preferences
+- **Data Analysis**: Processing and categorizing multilingual datasets
+- **Translation Pipelines**: Identifying source languages before translation
+- **Content Moderation**: Language-aware filtering and moderation systems
+
+<Note>
+The system achieves high accuracy even with **short text fragments** (3-20 words), making it suitable for real-time applications like chat systems and social media.
+</Note>
+
+## Supported Languages
+
+The system is trained on the **Europarl Parallel Corpus**, supporting 7 European languages:
+
+- 🇪🇸 Spanish (es)
+- 🇬🇧 English (en)
+- 🇫🇷 French (fr)
+- 🇩🇪 German (de)
+- 🇮🇹 Italian (it)
+- 🇵🇹 Portuguese (pt)
+- 🇸🇪 Swedish (sv)
+
+## Technical Approach
+
+### Data Source
+
+The system uses the [Europarl Parallel Corpus](https://www.statmt.org/europarl/), a multilingual dataset containing parliamentary proceedings from the European Parliament. This high-quality dataset provides:
+
+- Consistent text quality across languages
+- Formal and well-structured language samples
+- Parallel translations ensuring balanced representation
+- Domain-appropriate vocabulary for professional text
+
+### Model Architecture
+
+The project implements and compares multiple approaches:
+
+<CardGroup cols={2}>
+  <Card title="Traditional ML" icon="brain">
+    - **Naive Bayes**: Probabilistic classifier with TF-IDF features
+    - **Support Vector Machines (SVM)**: Linear classification with margin optimization
+    - **Random Forest**: Ensemble method for robust predictions
+  </Card>
+  
+  <Card title="Deep Learning" icon="network-wired">
+    - **LSTM Networks**: Unidirectional sequence modeling
+    - **BiLSTM Networks**: Bidirectional context capture
+    - **Embedding Layers**: Character and word-level representations
+  </Card>
+</CardGroup>
+
+### Text Processing Pipeline
+
+The system follows a structured pipeline:
+
+1. **Data Loading**: ETL process from Europarl corpus
+2. **Text Preprocessing**: Tokenization and normalization
+3. **Feature Extraction**: TF-IDF vectorization for ML models
+4. **Model Training**: Comparative training across multiple architectures
+5. **Evaluation**: Performance benchmarking and model selection
+
+<Tip>
+The system's modular design allows you to choose between lightweight traditional ML models for resource-constrained environments or deep learning models for maximum accuracy.
+</Tip>
+
+## Key Features
+
+- **Multiple Model Options**: Choose between speed (Naive Bayes) and accuracy (BiLSTM)
+- **Short Text Support**: Effective detection with as few as 3-20 words
+- **Pre-trained Models**: Ready-to-use models available in the repository
+- **Comparative Benchmarks**: Detailed performance metrics for each approach
+- **Production-Ready**: Serialized models with simple loading and inference
+
+## Project Structure
+
+```
+languageDetection/
+├── languageDetection.ipynb   # Main implementation notebook
+├── dataset/
+│   └── europarl_multilang_dataset_7000.csv
+├── modelos/
+│   ├── naive_bayes_alpha_0.5.zip
+│   ├── modelo_lstm.keras
+│   ├── modelo_bilstm.keras
+│   └── mejor_modelo_recurrente.keras
+└── README.md
+```
+
+## Performance Highlights
+
+The system achieves excellent classification performance across all 7 languages:
+
+- **Traditional ML**: ~95-98% accuracy with sub-second inference
+- **Deep Learning**: ~98-99% accuracy with rich contextual understanding
+- **Short Text**: Robust performance even with minimal input
+
+<Warning>
+While the models are trained on formal parliamentary text, they generalize well to other domains. However, performance may vary with highly specialized vocabulary or informal language (slang, abbreviations).
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Get started with pre-trained models in minutes
+  </Card>
+  
+  <Card title="Model Training" icon="graduation-cap" href="/models/overview">
+    Learn about the different model architectures
+  </Card>
+  
+  <Card title="API Reference" icon="code" href="/api/models">
+    Detailed API documentation and examples
+  </Card>
+  
+  <Card title="Performance" icon="chart-line" href="/models/comparison">
+    Compare model performance and benchmarks
+  </Card>
+</CardGroup>
+
+## Use Cases
+
+This language detection system is ideal for:
+
+- **Content Management Systems**: Automatically tag and route multilingual content
+- **Customer Support**: Route support tickets to language-appropriate teams
+- **Social Media Analysis**: Analyze sentiment and trends across languages
+- **E-commerce**: Personalize user experience based on language preference
+- **Research**: Analyze multilingual corpora and datasets
+
+---
+
+<Note>
+**Academic Context**: This project demonstrates a complete NLP pipeline from data collection through model evaluation, making it suitable for educational purposes and as a foundation for custom language detection systems.
+</Note>

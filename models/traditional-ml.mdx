@@ -1,0 +1,308 @@
+---
+title: Traditional ML Models
+description: Classical machine learning approaches for language detection including Naive Bayes, SVM, and Random Forest
+---
+
+Traditional machine learning models provide excellent performance for language detection with fast training and inference times. All models use **TF-IDF vectorization** with word-level bigrams.
+
+## Naive Bayes
+
+Multinomial Naive Bayes is the **best performing model** in our system, achieving 99.92% accuracy with minimal training time.
+
+### Architecture
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Vectorizer
+vectorizer = TfidfVectorizer(analyzer='word', ngram_range=(1, 2))
+
+# Model
+model = MultinomialNB(alpha=0.5)
+```
+
+### Hyperparameters
+
+The key hyperparameter is **alpha** (smoothing parameter):
+
+| Alpha | Validation Accuracy | Notes |
+|-------|---------------------|-------|
+| 0.001 | 99.78% | Too little smoothing |
+| 0.01  | 99.80% | Slight improvement |
+| 0.1   | 99.92% | Good performance |
+| **0.5** | **99.92%** | **Optimal value** |
+| 0.6-1.0 | 99.92% | Consistent performance |
+| 2.0-10.0 | 99.90% | Over-smoothing |
+
+<Note>
+  **Alpha = 0.5** was selected as the optimal value, providing the best balance between model complexity and generalization.
+</Note>
+
+### Training Code
+
+<CodeGroup>
+```python Training
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import TfidfVectorizer
+import time
+
+# Vectorize the data
+vectorizer = TfidfVectorizer(analyzer='word', ngram_range=(1, 2))
+X_train_vec = vectorizer.fit_transform(X_train)
+X_val_vec = vectorizer.transform(X_val)
+
+# Train the model
+start_time = time.time()
+model = MultinomialNB(alpha=0.5)
+model.fit(X_train_vec, y_train)
+training_time = time.time() - start_time
+
+print(f"Training time: {training_time:.2f} seconds")
+
+# Evaluate
+accuracy = model.score(X_val_vec, y_val)
+print(f"Validation accuracy: {accuracy:.4f}")
+```
+
+```python Pipeline
+from sklearn.pipeline import Pipeline
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Create pipeline
+pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer(analyzer='word', ngram_range=(1, 2))),
+    ('classifier', MultinomialNB(alpha=0.5))
+])
+
+# Train
+pipeline.fit(X_train, y_train)
+
+# Predict
+predictions = pipeline.predict(X_test)
+```
+
+```python Save/Load
+import joblib
+
+# Save model
+joblib.dump(pipeline, 'naive_bayes_alpha_0.5.joblib')
+
+# Load model
+loaded_model = joblib.load('naive_bayes_alpha_0.5.joblib')
+
+# Use
+prediction = loaded_model.predict(["Bonjour le monde"])
+```
+</CodeGroup>
+
+### Performance Metrics
+
+**Test Set Results (7,350 samples):**
+
+- **Overall Accuracy:** 99.92%
+- **Only 6 misclassifications** out of 7,350 samples
+
+**Per-Language Performance:**
+
+| Language | Precision | Recall | F1-Score | Support |
+|----------|-----------|--------|----------|----------|
+| Swedish (sv) | 1.0000 | 1.0000 | 1.0000 | 1,038 |
+| Dutch (nl) | 1.0000 | 1.0000 | 1.0000 | 1,027 |
+| Portuguese (pt) | 1.0000 | 0.9991 | 0.9995 | 1,086 |
+| Italian (it) | 1.0000 | 0.9982 | 0.9991 | 1,089 |
+| French (fr) | 0.9990 | 0.9981 | 0.9986 | 1,050 |
+| German (de) | 0.9980 | 0.9990 | 0.9985 | 1,018 |
+| Spanish (es) | 0.9971 | 1.0000 | 0.9986 | 1,042 |
+
+### Common Misclassifications
+
+<CodeGroup>
+```text Example 1
+Text: "Monsieur Bolkestein, je veux vous dire quelque chose!"
+Actual: German (de)
+Predicted: French (fr)
+Confidence: 98.47%
+Reason: French sentence in German document
+```
+
+```text Example 2
+Text: "Estamos profundamente desapontados."
+Actual: Portuguese (pt)
+Predicted: Spanish (es)
+Confidence: 47.95%
+Reason: High lexical similarity between Portuguese and Spanish
+```
+
+```text Example 3
+Text: "Where is the beef?"
+Actual: Italian (it)
+Predicted: German (de)
+Confidence: 24.96%
+Reason: English phrase in Italian document
+```
+</CodeGroup>
+
+## Support Vector Machines (SVM)
+
+Linear SVM provides strong performance with a smaller model size than Naive Bayes.
+
+### Architecture
+
+```python
+from sklearn.svm import LinearSVC
+
+model = LinearSVC()
+```
+
+### Performance
+
+- **Validation Accuracy:** 99.77%
+- **Training Time:** 0.59 seconds
+- **Inference Time:** 0.00 seconds per prediction
+- **Model Size:** 14.92 MB (half the size of Naive Bayes)
+
+### Training Code
+
+```python
+from sklearn.svm import LinearSVC
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+
+# Create pipeline
+pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer(analyzer='word', ngram_range=(1, 2))),
+    ('classifier', LinearSVC())
+])
+
+# Train
+pipeline.fit(X_train, y_train)
+
+# Evaluate
+accuracy = pipeline.score(X_val, y_val)
+print(f"Validation accuracy: {accuracy:.4f}")
+```
+
+<Note>
+  SVM is a good alternative to Naive Bayes when you need a **smaller model size** with only a slight decrease in accuracy (0.15%).
+</Note>
+
+## Random Forest
+
+Random Forest is an ensemble method that combines multiple decision trees.
+
+### Architecture
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+
+model = RandomForestClassifier(n_estimators=100)
+```
+
+### Hyperparameters
+
+- **n_estimators:** 100 trees
+- **Default settings** for all other parameters
+
+### Performance
+
+- **Validation Accuracy:** 99.41%
+- **Training Time:** 128 seconds (significantly slower)
+- **Inference Time:** 0.66 seconds per batch
+- **Model Size:** ~230 MB (largest model)
+
+### Training Code
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.pipeline import Pipeline
+
+# Create pipeline
+pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer(analyzer='word', ngram_range=(1, 2))),
+    ('classifier', RandomForestClassifier(n_estimators=100))
+])
+
+# Train
+pipeline.fit(X_train, y_train)
+
+# Evaluate
+accuracy = pipeline.score(X_val, y_val)
+print(f"Validation accuracy: {accuracy:.4f}")
+```
+
+<Note>
+  Random Forest is **not recommended** for this task due to:
+  - Significantly longer training time (128s vs 0.03s for Naive Bayes)
+  - Lower accuracy (99.41% vs 99.92%)
+  - Much larger model size (230 MB vs 30 MB)
+</Note>
+
+## Model Comparison
+
+### Accuracy vs Training Time
+
+| Model | Accuracy | Training Time | Speedup vs Random Forest |
+|-------|----------|---------------|--------------------------|
+| **Naive Bayes** | **99.92%** | **0.03s** | **4,267x faster** |
+| SVM | 99.77% | 0.59s | 217x faster |
+| Logistic Regression | 99.56% | 14.73s | 8.7x faster |
+| Random Forest | 99.41% | 128s | 1x (baseline) |
+
+### Key Findings
+
+<CardGroup cols={2}>
+  <Card title="Best Overall" icon="trophy">
+    **Naive Bayes (alpha=0.5)**
+    - Highest accuracy: 99.92%
+    - Fastest training: 0.03s
+    - Production-ready performance
+  </Card>
+  <Card title="Smallest Model" icon="compress">
+    **SVM**
+    - Model size: 14.92 MB
+    - Accuracy: 99.77%
+    - Fast inference: &lt;0.01s
+  </Card>
+</CardGroup>
+
+## Recommended Model
+
+For production deployment, we recommend **Naive Bayes with alpha=0.5**:
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+import joblib
+
+# Create and train pipeline
+pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer(analyzer='word', ngram_range=(1, 2))),
+    ('classifier', MultinomialNB(alpha=0.5))
+])
+
+pipeline.fit(X_train, y_train)
+
+# Save for production
+joblib.dump(pipeline, 'modelos/naive_bayes_alpha_0.5.joblib')
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Deep Learning Models" icon="brain-circuit" href="/models/deep-learning">
+    Explore LSTM and BiLSTM architectures
+  </Card>
+  <Card title="Model Comparison" icon="chart-bar" href="/models/comparison">
+    See detailed comparisons across all models
+  </Card>
+  <Card title="Training Process" icon="graduation-cap" href="/guides/training">
+    Learn how to train models on your own data
+  </Card>
+  <Card title="Using Models" icon="play" href="/guides/inference">
+    Start making predictions with trained models
+  </Card>
+</CardGroup>

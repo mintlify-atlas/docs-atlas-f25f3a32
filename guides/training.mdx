@@ -1,0 +1,324 @@
+---
+title: 'Training Models'
+description: 'Step-by-step guide to train language detection models from scratch'
+---
+
+## Overview
+
+This guide walks you through the complete process of training machine learning models for language detection using the Europarl multilingual dataset. You'll learn how to prepare data, train multiple classifiers, and evaluate their performance.
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+- Python 3.7+
+- scikit-learn installed
+- pandas and numpy
+- The Europarl dataset loaded
+
+## Dataset Structure
+
+The dataset contains parliamentary texts in 7 languages:
+
+- Spanish (es)
+- French (fr)
+- German (de)
+- Italian (it)
+- Portuguese (pt)
+- Dutch (nl)
+- Swedish (sv)
+
+Each record contains:
+- `texto`: The text sample (3-20 words)
+- `idioma`: The language code
+
+## Training Process
+
+<Steps>
+
+### Step 1: Load and Split the Data
+
+First, load your dataset and split it into training, validation, and test sets:
+
+```python
+import pandas as pd
+import numpy as np
+import random
+from sklearn.model_selection import train_test_split
+
+# Load dataset
+df = pd.read_csv('europarl_multilang_dataset_7000.csv')
+df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+# Split: 70% train, 15% validation, 15% test
+def divide_dataset(df, train_pct=70, val_pct=15, seed=42):
+    df_clean = df.dropna()
+    random.seed(seed)
+    np.random.seed(seed)
+    
+    total = len(df_clean)
+    n_train = int(total * train_pct / 100)
+    n_val = int(total * val_pct / 100)
+    
+    df_train = df_clean.iloc[:n_train].reset_index(drop=True)
+    df_val = df_clean.iloc[n_train:n_train + n_val].reset_index(drop=True)
+    df_test = df_clean.iloc[n_train + n_val:].reset_index(drop=True)
+    
+    return df_train, df_val, df_test
+
+df_train, df_val, df_test = divide_dataset(df)
+
+print(f"Training: {len(df_train)} samples")
+print(f"Validation: {len(df_val)} samples")
+print(f"Test: {len(df_test)} samples")
+```
+
+### Step 2: Text Vectorization
+
+Transform text data into numerical features using TF-IDF:
+
+```python
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# Initialize vectorizer
+vectorizer = TfidfVectorizer(
+    analyzer='char',      # Character-level analysis
+    ngram_range=(2, 4),   # Use 2-4 character n-grams
+    max_features=5000     # Limit features
+)
+
+# Fit on training data and transform
+X_train = vectorizer.fit_transform(df_train['texto'])
+X_val = vectorizer.transform(df_val['texto'])
+X_test = vectorizer.transform(df_test['texto'])
+
+# Extract labels
+y_train = df_train['idioma']
+y_val = df_val['idioma']
+y_test = df_test['idioma']
+
+print(f"Feature matrix shape: {X_train.shape}")
+```
+
+<Tip>
+Character-level n-grams are particularly effective for language detection as they capture language-specific patterns like character combinations and morphological features.
+</Tip>
+
+### Step 3: Train Multiple Classifiers
+
+Train and compare different machine learning models:
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+import time
+
+# Define models
+models = {
+    'Multinomial Naive Bayes': MultinomialNB(),
+    'Logistic Regression': LogisticRegression(
+        max_iter=1000,
+        random_state=42
+    ),
+    'Linear SVC': LinearSVC(
+        max_iter=1000,
+        random_state=42
+    ),
+    'Random Forest': RandomForestClassifier(
+        n_estimators=100,
+        random_state=42
+    )
+}
+
+# Train and evaluate each model
+results = {}
+
+for name, model in models.items():
+    print(f"\nTraining {name}...")
+    
+    # Train
+    start_time = time.time()
+    model.fit(X_train, y_train)
+    train_time = time.time() - start_time
+    
+    # Predict
+    y_pred_val = model.predict(X_val)
+    
+    # Evaluate
+    accuracy = accuracy_score(y_val, y_pred_val)
+    
+    results[name] = {
+        'model': model,
+        'accuracy': accuracy,
+        'train_time': train_time
+    }
+    
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Training time: {train_time:.2f}s")
+```
+
+### Step 4: Train Deep Learning Model (Optional)
+
+For improved performance, train an LSTM model:
+
+```python
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Embedding, LSTM, Dense, Dropout
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.callbacks import EarlyStopping
+
+# Prepare sequences
+tokenizer = Tokenizer(char_level=True)
+tokenizer.fit_on_texts(df_train['texto'])
+
+X_train_seq = tokenizer.texts_to_sequences(df_train['texto'])
+X_val_seq = tokenizer.texts_to_sequences(df_val['texto'])
+
+# Pad sequences
+max_length = 50
+X_train_pad = pad_sequences(X_train_seq, maxlen=max_length)
+X_val_pad = pad_sequences(X_val_seq, maxlen=max_length)
+
+# Encode labels
+from sklearn.preprocessing import LabelEncoder
+le = LabelEncoder()
+y_train_enc = le.fit_transform(y_train)
+y_val_enc = le.transform(y_val)
+
+# Build model
+model = Sequential([
+    Embedding(input_dim=len(tokenizer.word_index) + 1,
+              output_dim=128,
+              input_length=max_length),
+    LSTM(64, return_sequences=True),
+    Dropout(0.3),
+    LSTM(32),
+    Dropout(0.3),
+    Dense(7, activation='softmax')
+])
+
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+# Train with early stopping
+early_stop = EarlyStopping(
+    monitor='val_loss',
+    patience=3,
+    restore_best_weights=True
+)
+
+history = model.fit(
+    X_train_pad, y_train_enc,
+    validation_data=(X_val_pad, y_val_enc),
+    epochs=20,
+    batch_size=64,
+    callbacks=[early_stop],
+    verbose=1
+)
+```
+
+<Warning>
+Deep learning models require more computational resources and training time. Use a GPU if available for faster training.
+</Warning>
+
+### Step 5: Save the Best Model
+
+Save your trained models for later use:
+
+```python
+import joblib
+import pickle
+
+# Save scikit-learn model
+best_model_name = max(results, key=lambda k: results[k]['accuracy'])
+best_model = results[best_model_name]['model']
+
+joblib.dump(best_model, 'language_detector_model.pkl')
+joblib.dump(vectorizer, 'tfidf_vectorizer.pkl')
+
+print(f"Saved {best_model_name} model")
+
+# Save keras model (if using deep learning)
+model.save('lstm_language_detector.h5')
+
+# Save tokenizer
+with open('tokenizer.pkl', 'wb') as f:
+    pickle.dump(tokenizer, f)
+    
+print("Models saved successfully!")
+```
+
+</Steps>
+
+## Training Tips
+
+<Tip>
+**Hyperparameter Tuning**: Use GridSearchCV or RandomizedSearchCV to find optimal hyperparameters:
+
+```python
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    'C': [0.1, 1, 10],
+    'max_iter': [1000, 2000]
+}
+
+grid_search = GridSearchCV(
+    LogisticRegression(random_state=42),
+    param_grid,
+    cv=3,
+    scoring='accuracy'
+)
+
+grid_search.fit(X_train, y_train)
+print(f"Best parameters: {grid_search.best_params_}")
+```
+</Tip>
+
+## Performance Comparison
+
+Typical accuracy ranges for different models:
+
+| Model | Training Time | Accuracy |
+|-------|--------------|----------|
+| Multinomial NB | Fast (~1s) | 95-97% |
+| Logistic Regression | Medium (~5s) | 97-99% |
+| Linear SVC | Medium (~10s) | 98-99% |
+| Random Forest | Slow (~30s) | 96-98% |
+| LSTM | Very Slow (~5min) | 98-99.5% |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Evaluation" icon="chart-line" href="/guides/evaluation">
+    Learn how to evaluate model performance with metrics and visualizations
+  </Card>
+  <Card title="Inference" icon="rocket" href="/guides/inference">
+    Deploy your model and make predictions on new text
+  </Card>
+</CardGroup>
+
+## Common Issues
+
+**Memory errors during training:**
+- Reduce `max_features` in TfidfVectorizer
+- Use smaller batch sizes for deep learning
+- Train on a subset of data first
+
+**Poor accuracy:**
+- Check data balance across languages
+- Experiment with different n-gram ranges
+- Try character-level analysis
+- Increase model complexity gradually
+
+**Training takes too long:**
+- Start with simpler models (Naive Bayes, Logistic Regression)
+- Reduce feature dimensions
+- Use incremental learning for large datasets

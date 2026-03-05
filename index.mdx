@@ -1,97 +1,107 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Language Detection System"
+description: "Automatic language identification using Europarl Parallel Corpus with traditional ML and Deep Learning models"
 ---
 
-## Setting up
+# Language Detection System
 
-Get your documentation site up and running in minutes.
+Comprehensive language identification system built on the Europarl Parallel Corpus, implementing and comparing traditional Machine Learning and Deep Learning approaches for automatic language detection across 7 European languages.
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+## Get Started
 
-## Make it yours
+Jump right in and start detecting languages with our trained models.
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
+<CardGroup cols={2}>
   <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
+    title="Quick Start"
+    icon="rocket"
+    href="/quickstart"
   >
-    Edit your docs locally and preview them in real time.
+    Get up and running with language detection in minutes
   </Card>
   <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
+    title="Core Concepts"
+    icon="book"
+    href="/concepts/overview"
   >
-    Customize the design and colors of your site to match your brand.
+    Understand the fundamentals of language detection
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
+</CardGroup>
+
+## Key Features
+
+This system provides a complete ML pipeline for language detection with multiple model implementations.
+
+<CardGroup cols={2}>
+  <Card
+    title="Multi-Language Support"
+    icon="globe"
   >
-    Organize your docs to help users find what they need and succeed with your product.
+    Detects 7 European languages from the Europarl corpus with high accuracy
   </Card>
   <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
+    title="Traditional ML Models"
+    icon="chart-bar"
   >
-    Auto-generate API documentation from OpenAPI specifications.
-  </Card>
-</Columns>
-
-## Create beautiful pages
-
-Everything you need to create world-class documentation.
-
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+    Naive Bayes, SVM, and Random Forest classifiers with optimized hyperparameters
   </Card>
   <Card
-    title="Code samples"
+    title="Deep Learning Models"
+    icon="brain"
+  >
+    LSTM and Bidirectional LSTM networks for advanced language detection
+  </Card>
+  <Card
+    title="TF-IDF Vectorization"
+    icon="vector-square"
+  >
+    Efficient text representation using Term Frequency-Inverse Document Frequency
+  </Card>
+</CardGroup>
+
+## Explore the Models
+
+Compare different approaches to language detection and choose the best model for your needs.
+
+<CardGroup cols={3}>
+  <Card
+    title="Traditional ML"
+    icon="gear"
+    href="/models/traditional-ml"
+  >
+    Naive Bayes, SVM, and Random Forest implementations
+  </Card>
+  <Card
+    title="Deep Learning"
+    icon="microchip"
+    href="/models/deep-learning"
+  >
+    LSTM and Bidirectional LSTM models
+  </Card>
+  <Card
+    title="Model Comparison"
+    icon="scale-balanced"
+    href="/models/comparison"
+  >
+    Performance metrics and evaluation results
+  </Card>
+</CardGroup>
+
+## Documentation
+
+<CardGroup cols={2}>
+  <Card
+    title="Training Guide"
+    icon="dumbbell"
+    href="/guides/training"
+  >
+    Train your own language detection models
+  </Card>
+  <Card
+    title="API Reference"
     icon="code"
-    href="/essentials/code"
+    href="/api/preprocessing"
   >
-    Add sample code to demonstrate how to use your product.
+    Complete pipeline API documentation
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+</CardGroup>

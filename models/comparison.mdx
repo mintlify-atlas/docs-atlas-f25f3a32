@@ -1,0 +1,522 @@
+---
+title: Model Comparison
+description: Comprehensive comparison of all language detection models including performance metrics, training times, and use case recommendations
+---
+
+This page provides a detailed comparison of all five models implemented in the Language Detection System, based on actual results from the Europarl corpus.
+
+## Executive Summary
+
+<CardGroup cols={2}>
+  <Card title="Best Overall" icon="trophy">
+    **Naive Bayes (alpha=0.5)**
+    - 99.92% accuracy
+    - 0.03s training time
+    - 29.84 MB model size
+    - Best for production
+  </Card>
+  <Card title="Most Efficient" icon="bolt">
+    **Linear SVM**
+    - 99.77% accuracy
+    - 14.92 MB model size
+    - Smallest footprint
+    - Fast inference
+  </Card>
+</CardGroup>
+
+## Overall Performance Comparison
+
+### Accuracy Rankings
+
+| Rank | Model | Validation Accuracy | Test Accuracy | Misclassifications (out of 7,350) |
+|------|-------|---------------------|---------------|------------------------------------|
+| 🥇 **1** | **Naive Bayes** | **99.92%** | **99.92%** | **6** |
+| 🥈 2 | SVM | 99.77% | - | ~17 |
+| 🥉 3 | Logistic Regression | 99.56% | - | ~32 |
+| 4 | Random Forest | 99.41% | - | ~43 |
+| 5 | BiLSTM | 94.08% | 93.67% | 465 |
+| 6 | LSTM | 94.07% | - | 436 |
+
+### Training Time Rankings
+
+| Rank | Model | Training Time | Relative Speed |
+|------|-------|---------------|----------------|
+| 🥇 **1** | **Naive Bayes** | **0.03s** | **1x (baseline)** |
+| 🥈 2 | SVM | 0.59s | 20x slower |
+| 🥉 3 | Logistic Regression | 14.73s | 491x slower |
+| 4 | LSTM | ~1,312s (15 epochs × 82s) | 43,733x slower |
+| 5 | BiLSTM | ~2,070s (15 epochs × 138s) | 69,000x slower |
+| 6 | Random Forest | 128s | 4,267x slower |
+
+### Model Size Rankings
+
+| Rank | Model | Model Size | Relative Size |
+|------|-------|------------|---------------|
+| 🥇 **1** | **BiLSTM** | **0.62 MB** | **1x (smallest)** |
+| 🥈 2 | LSTM | 0.62 MB | 1x |
+| 🥉 3 | SVM | 14.92 MB | 24x larger |
+| 4 | Logistic Regression | 14.92 MB | 24x larger |
+| 5 | Naive Bayes | 29.84 MB | 48x larger |
+| 6 | Random Forest | ~230 MB | 371x larger |
+
+## Detailed Performance Metrics
+
+### Traditional ML Models
+
+<Tabs>
+  <Tab title="Naive Bayes">
+    **Best Overall Model**
+    
+    **Hyperparameters:**
+    - Alpha: 0.5 (smoothing parameter)
+    - Vectorizer: TF-IDF with word n-grams (1, 2)
+    
+    **Performance:**
+    - Validation Accuracy: **99.92%**
+    - Test Accuracy: **99.92%**
+    - Training Time: 0.03s
+    - Inference Time: 0.01s per batch
+    - Model Size: 29.84 MB
+    
+    **Per-Language F1-Scores (Test Set):**
+    - Swedish (sv): 1.0000 ✓
+    - Dutch (nl): 1.0000 ✓
+    - Portuguese (pt): 0.9995
+    - Italian (it): 0.9991
+    - French (fr): 0.9986
+    - German (de): 0.9985
+    - Spanish (es): 0.9986
+    
+    **Strengths:**
+    - Highest accuracy across all models
+    - Extremely fast training and inference
+    - Robust performance on all languages
+    - Production-ready out of the box
+    
+    **Weaknesses:**
+    - Larger model size than SVM
+    - Assumes feature independence (not an issue in practice)
+  </Tab>
+  
+  <Tab title="SVM">
+    **Most Efficient Model**
+    
+    **Hyperparameters:**
+    - Kernel: Linear
+    - Vectorizer: TF-IDF with word n-grams (1, 2)
+    
+    **Performance:**
+    - Validation Accuracy: 99.77%
+    - Training Time: 0.59s
+    - Inference Time: &lt;0.01s per batch
+    - Model Size: **14.92 MB** (smallest traditional ML)
+    
+    **Strengths:**
+    - Smallest model size among traditional ML
+    - Very fast inference
+    - Good balance of accuracy and efficiency
+    
+    **Weaknesses:**
+    - Slightly lower accuracy than Naive Bayes (-0.15%)
+    - Longer training time than Naive Bayes
+  </Tab>
+  
+  <Tab title="Random Forest">
+    **Not Recommended**
+    
+    **Hyperparameters:**
+    - n_estimators: 100
+    - Vectorizer: TF-IDF with word n-grams (1, 2)
+    
+    **Performance:**
+    - Validation Accuracy: 99.41%
+    - Training Time: **128s** (4,267x slower than NB)
+    - Inference Time: 0.66s per batch
+    - Model Size: ~230 MB
+    
+    **Strengths:**
+    - Ensemble approach provides robustness
+    - Feature importance analysis available
+    
+    **Weaknesses:**
+    - Lowest accuracy among traditional ML (-0.51% vs NB)
+    - Significantly longer training time
+    - Largest model size by far
+    - Slow inference compared to other models
+  </Tab>
+  
+  <Tab title="Logistic Regression">
+    **Middle-of-the-Road**
+    
+    **Hyperparameters:**
+    - max_iter: 1000
+    - Vectorizer: TF-IDF with word n-grams (1, 2)
+    
+    **Performance:**
+    - Validation Accuracy: 99.56%
+    - Training Time: 14.73s
+    - Inference Time: 0.01s per batch
+    - Model Size: 14.92 MB
+    
+    **Strengths:**
+    - Interpretable coefficients
+    - Probability calibration
+    - Smaller model size
+    
+    **Weaknesses:**
+    - Lower accuracy than NB and SVM
+    - Much slower training than NB
+  </Tab>
+</Tabs>
+
+### Deep Learning Models
+
+<Tabs>
+  <Tab title="BiLSTM">
+    **Best Deep Learning Model**
+    
+    **Architecture:**
+    - Embedding: 10K vocab, 100 dimensions
+    - Bidirectional LSTM: 32 units (64 total)
+    - Dense layer: 64 units with ReLU
+    - Output: 7 units with softmax
+    - Dropout: 0.3 rate
+    
+    **Performance:**
+    - Validation Accuracy: 94.08%
+    - Test Accuracy: 93.67%
+    - Training Time: ~2,070s (15 epochs)
+    - Inference Time: 30ms per sample
+    - Model Size: 0.62 MB
+    
+    **Per-Language F1-Scores (Validation):**
+    - Swedish (sv): 0.9747
+    - Dutch (nl): 0.9645
+    - German (de): 0.9659 ✓ (best DL)
+    - Portuguese (pt): 0.9368
+    - French (fr): 0.9365
+    - Spanish (es): 0.9272
+    - Italian (it): 0.8853
+    
+    **Strengths:**
+    - Bidirectional context understanding
+    - Smallest model size (0.62 MB)
+    - Learns word embeddings
+    - Better on German, French, Spanish vs LSTM
+    
+    **Weaknesses:**
+    - 5.85% lower accuracy than Naive Bayes
+    - 2x slower inference than LSTM
+    - Long training time
+    - Poor performance on Italian
+  </Tab>
+  
+  <Tab title="LSTM">
+    **Faster Deep Learning Option**
+    
+    **Architecture:**
+    - Embedding: 10K vocab, 100 dimensions
+    - LSTM: 64 units
+    - Output: 7 units with softmax
+    - Dropout: 0.3 rate
+    
+    **Performance:**
+    - Validation Accuracy: 94.07%
+    - Training Time: ~1,312s (15 epochs)
+    - Inference Time: 15ms per sample
+    - Model Size: 0.62 MB
+    
+    **Per-Language F1-Scores (Validation):**
+    - Swedish (sv): 0.9732
+    - Dutch (nl): 0.9693 ✓ (best DL)
+    - Portuguese (pt): 0.9369 ✓ (best DL)
+    - German (de): 0.9510
+    - French (fr): 0.9336
+    - Spanish (es): 0.9268
+    - Italian (it): 0.8969 ✓ (best DL)
+    
+    **Strengths:**
+    - 2x faster inference than BiLSTM
+    - Simpler architecture
+    - Better on Dutch, Portuguese, Italian
+    - Learns sequential patterns
+    
+    **Weaknesses:**
+    - 5.85% lower accuracy than Naive Bayes
+    - Unidirectional processing
+    - Long training time
+    - Many OOV word issues
+  </Tab>
+</Tabs>
+
+## Vectorization Techniques Comparison
+
+Before settling on word-level TF-IDF, we compared multiple vectorization approaches:
+
+| Technique | Vectorization Time | Accuracy | Model Size |
+|-----------|-------------------|----------|------------|
+| **Word TF-IDF** | **1.54s** | **99.89%** | **29.84 MB** |
+| Character TF-IDF | 4.99s | 99.88% | 9.66 MB |
+| Hashing | 4.96s | 99.81% | Variable |
+| Letter Frequency | 0.86s | 86.80% | 0.00 MB |
+
+**Winner:** Word-level TF-IDF with n-grams (1, 2) provides the best balance of accuracy and speed.
+
+## Per-Language Performance Analysis
+
+### Traditional ML (Naive Bayes) vs Deep Learning (BiLSTM)
+
+<Tabs>
+  <Tab title="Swedish">
+    | Model | Precision | Recall | F1-Score |
+    |-------|-----------|--------|----------|
+    | **Naive Bayes** | **1.0000** | **1.0000** | **1.0000** |
+    | BiLSTM | 0.9939 | 0.9562 | 0.9747 |
+    | Difference | -0.61% | -4.38% | -2.53% |
+    
+    **Analysis:** NB achieves perfect classification on Swedish, while BiLSTM still performs very well.
+  </Tab>
+  
+  <Tab title="Dutch">
+    | Model | Precision | Recall | F1-Score |
+    |-------|-----------|--------|----------|
+    | **Naive Bayes** | **1.0000** | **1.0000** | **1.0000** |
+    | BiLSTM | 0.9596 | 0.9694 | 0.9645 |
+    | Difference | -4.04% | -3.06% | -3.55% |
+    
+    **Analysis:** NB achieves perfect classification on Dutch. BiLSTM has more difficulty with Dutch than Swedish.
+  </Tab>
+  
+  <Tab title="Portuguese">
+    | Model | Precision | Recall | F1-Score |
+    |-------|-----------|--------|----------|
+    | **Naive Bayes** | **1.0000** | **0.9991** | **0.9995** |
+    | BiLSTM | 0.9289 | 0.9448 | 0.9368 |
+    | Difference | -7.11% | -5.43% | -6.27% |
+    
+    **Analysis:** Portuguese is challenging for BiLSTM due to similarity with Spanish. NB handles it nearly perfectly.
+  </Tab>
+  
+  <Tab title="Italian">
+    | Model | Precision | Recall | F1-Score |
+    |-------|-----------|--------|----------|
+    | **Naive Bayes** | **1.0000** | **0.9982** | **0.9991** |
+    | BiLSTM | 0.8261 | 0.9536 | 0.8853 |
+    | Difference | -17.39% | -4.46% | -11.38% |
+    
+    **Analysis:** Italian is the hardest language for deep learning models. BiLSTM struggles with precision, likely confusing Italian with French and Spanish.
+  </Tab>
+  
+  <Tab title="French">
+    | Model | Precision | Recall | F1-Score |
+    |-------|-----------|--------|----------|
+    | **Naive Bayes** | **0.9990** | **0.9981** | **0.9986** |
+    | BiLSTM | 0.9744 | 0.9015 | 0.9365 |
+    | Difference | -2.46% | -9.66% | -6.21% |
+    
+    **Analysis:** French recall is lower for BiLSTM, suggesting confusion with other Romance languages.
+  </Tab>
+  
+  <Tab title="German">
+    | Model | Precision | Recall | F1-Score |
+    |-------|-----------|--------|----------|
+    | **Naive Bayes** | **0.9980** | **0.9990** | **0.9985** |
+    | BiLSTM | 0.9650 | 0.9669 | 0.9659 |
+    | Difference | -3.30% | -3.21% | -3.26% |
+    
+    **Analysis:** German is BiLSTM's best-performing language among the deep learning models, likely due to distinctive vocabulary.
+  </Tab>
+  
+  <Tab title="Spanish">
+    | Model | Precision | Recall | F1-Score |
+    |-------|-----------|--------|----------|
+    | **Naive Bayes** | **0.9971** | **1.0000** | **0.9986** |
+    | BiLSTM | 0.9632 | 0.8937 | 0.9272 |
+    | Difference | -3.39% | -10.63% | -7.14% |
+    
+    **Analysis:** Spanish recall is particularly low for BiLSTM, with confusion mainly with Portuguese and Italian.
+  </Tab>
+</Tabs>
+
+## Common Misclassifications
+
+### Naive Bayes Misclassifications (6 total)
+
+<CodeGroup>
+```text Foreign Language in Text
+Text: "Monsieur Bolkestein, je veux vous dire quelque chose!"
+Actual: German (de)
+Predicted: French (fr) - Confidence: 98.47%
+Reason: French sentence appears in German document
+```
+
+```text Similar Languages
+Text: "Estamos profundamente desapontados."
+Actual: Portuguese (pt)
+Predicted: Spanish (es) - Confidence: 47.95%
+Reason: High lexical overlap between Spanish and Portuguese
+```
+
+```text English Text
+Text: "Where is the beef?"
+Actual: Italian (it)
+Predicted: German (de) - Confidence: 24.96%
+Reason: English phrase in Italian document
+```
+</CodeGroup>
+
+### Deep Learning Misclassifications (435-465 total)
+
+<CodeGroup>
+```text Out-of-Vocabulary Words
+Text: "Temos de mudar resolutamente de rumo."
+Tokens: "<OOV> de <OOV> <OOV> de <OOV>"
+Actual: Portuguese (pt)
+Predicted: Dutch (nl) - Confidence: 45.31%
+Reason: Most words are OOV, model relies on "de" which appears in both languages
+```
+
+```text Limited Context
+Text: "Estou perfeitamente de acordo."
+Tokens: "<OOV> <OOV> de <OOV>"
+Actual: Portuguese (pt)
+Predicted: Dutch (nl) - Confidence: 34.22%
+Reason: Short text with mostly OOV words provides insufficient context
+```
+
+```text Language Confusion
+Text: "Mi voto era 'a favor'."
+Actual: Spanish (es)
+Predicted: Portuguese (pt) - Confidence: 38.83%
+Reason: Similar grammar and vocabulary between Romance languages
+```
+</CodeGroup>
+
+## Use Case Recommendations
+
+<CardGroup cols={2}>
+  <Card title="Production Systems" icon="server">
+    **Recommended: Naive Bayes**
+    - Highest accuracy (99.92%)
+    - Fast inference (&lt;10ms)
+    - Reliable and battle-tested
+    - Easy to deploy
+  </Card>
+  
+  <Card title="Resource-Constrained" icon="microchip">
+    **Recommended: SVM or BiLSTM**
+    - SVM: 14.92 MB, 99.77% accuracy
+    - BiLSTM: 0.62 MB, 93.67% accuracy
+    - Trade accuracy for size based on needs
+  </Card>
+  
+  <Card title="Real-Time Processing" icon="bolt">
+    **Recommended: Naive Bayes or SVM**
+    - Inference: &lt;1ms per prediction
+    - Batch processing: thousands/second
+    - Low latency requirements
+  </Card>
+  
+  <Card title="Research & Embeddings" icon="flask">
+    **Recommended: BiLSTM**
+    - Learned embeddings reusable
+    - Interpretable attention weights
+    - Sequential pattern analysis
+  </Card>
+</CardGroup>
+
+## Training Cost Analysis
+
+Assuming training on a standard machine (GPU for deep learning):
+
+| Model | Training Time | Est. Cloud Cost* | Retraining Frequency |
+|-------|---------------|------------------|----------------------|
+| **Naive Bayes** | 0.03s | $0.00 | Daily if needed |
+| SVM | 0.59s | $0.00 | Daily if needed |
+| Logistic Regression | 14.73s | $0.00 | Daily if needed |
+| Random Forest | 128s | $0.01 | Weekly |
+| LSTM | ~22 min | $0.10 | Monthly |
+| BiLSTM | ~35 min | $0.15 | Monthly |
+
+*Estimated costs on AWS/GCP compute instances
+
+<Note>
+  Traditional ML models can be retrained in **seconds**, making them ideal for continuous learning scenarios. Deep learning models require **minutes to hours** and are better suited for less frequent retraining.
+</Note>
+
+## Final Recommendations
+
+### For Most Users
+
+```python
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+import joblib
+
+# Use Naive Bayes - best overall performance
+pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer(analyzer='word', ngram_range=(1, 2))),
+    ('classifier', MultinomialNB(alpha=0.5))
+])
+
+pipeline.fit(X_train, y_train)
+joblib.dump(pipeline, 'language_detector.joblib')
+```
+
+### For Embedded Systems
+
+```python
+# Use SVM for smaller model size
+pipeline = Pipeline([
+    ('vectorizer', TfidfVectorizer(analyzer='word', ngram_range=(1, 2))),
+    ('classifier', LinearSVC())
+])
+```
+
+### For Research
+
+```python
+from tensorflow.keras.models import load_model
+
+# Use BiLSTM for embeddings and interpretability
+model = load_model('modelos/modelo_bilstm.keras')
+
+# Extract embeddings
+embedding_model = Model(inputs=model.input, 
+                        outputs=model.layers[1].output)
+embeddings = embedding_model.predict(sequences)
+```
+
+## Summary Table
+
+| Criteria | Best Model | Runner-Up |
+|----------|------------|----------|
+| **Accuracy** | Naive Bayes (99.92%) | SVM (99.77%) |
+| **Training Speed** | Naive Bayes (0.03s) | SVM (0.59s) |
+| **Inference Speed** | SVM (&lt;0.01s) | Naive Bayes (0.01s) |
+| **Model Size** | BiLSTM (0.62 MB) | LSTM (0.62 MB) |
+| **Production Ready** | Naive Bayes | SVM |
+| **Embeddings** | BiLSTM | LSTM |
+| **Overall Winner** | **Naive Bayes** | **SVM** |
+
+<Note>
+  **Naive Bayes with alpha=0.5** is the recommended model for production use, achieving 99.92% accuracy with fast training and inference times.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Training Guide" icon="graduation-cap" href="/guides/training">
+    Learn how to train your own models
+  </Card>
+  <Card title="Using Models" icon="play" href="/guides/inference">
+    Start making predictions
+  </Card>
+  <Card title="Model Details" icon="microscope" href="/models/traditional-ml">
+    Deep dive into model implementations
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/models">
+    Integrate models into your application
+  </Card>
+</CardGroup>

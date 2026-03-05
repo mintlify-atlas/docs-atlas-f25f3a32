@@ -1,0 +1,109 @@
+---
+title: 'Overview'
+description: 'Understanding the language detection pipeline from data to predictions'
+---
+
+## Language Detection Pipeline
+
+The language detection system implements a complete machine learning pipeline for automatic identification of European languages. The system processes text through multiple stages to transform raw parliamentary transcripts into accurate language predictions.
+
+### Pipeline Stages
+
+The complete workflow follows these key stages:
+
+<Steps>
+  <Step title="Data Loading">
+    Load the Europarl Parallel Corpus containing parliamentary proceedings in 7 European languages
+  </Step>
+  
+  <Step title="Data Exploration">
+    Analyze distribution of languages, vocabulary statistics, and dataset characteristics
+  </Step>
+  
+  <Step title="Text Preprocessing">
+    Clean and normalize text data through tokenization, lowercasing, and optional stopword removal
+  </Step>
+  
+  <Step title="Vectorization">
+    Transform text into numerical feature vectors using TF-IDF (Term Frequency-Inverse Document Frequency)
+  </Step>
+  
+  <Step title="Model Training">
+    Train classification algorithms including Naive Bayes, SVM, Random Forest, and LSTM models
+  </Step>
+  
+  <Step title="Evaluation">
+    Compare model performance using accuracy, precision, recall, and F1-score metrics
+  </Step>
+</Steps>
+
+## Architecture
+
+The system follows a classical supervised learning approach:
+
+```mermaid
+graph LR
+    A[Raw Text] --> B[Preprocessing]
+    B --> C[TF-IDF Vectorization]
+    C --> D[ML Classifier]
+    D --> E[Language Prediction]
+```
+
+### Key Design Decisions
+
+<CardGroup cols={2}>
+  <Card title="Feature Extraction" icon="chart-network">
+    TF-IDF captures language-specific word patterns without requiring deep linguistic knowledge
+  </Card>
+  
+  <Card title="Multiple Classifiers" icon="brain">
+    Comparative evaluation of traditional ML (SVM, Naive Bayes) and deep learning (LSTM) approaches
+  </Card>
+  
+  <Card title="Balanced Dataset" icon="scale-balanced">
+    Equal representation of all 7 languages ensures unbiased model training
+  </Card>
+  
+  <Card title="Evaluation Focus" icon="chart-line">
+    Rigorous comparison to identify the most effective approach for production use
+  </Card>
+</CardGroup>
+
+## Why This Approach?
+
+Language identification is a **fundamental NLP task** that serves as the foundation for multilingual applications:
+
+<Check>**Preprocessing Step** - Routes text to language-specific models for translation, sentiment analysis, etc.</Check>
+<Check>**Content Filtering** - Automatically classifies documents by language in large corpora</Check>
+<Check>**Quality Control** - Validates that content matches expected language requirements</Check>
+
+### Advantages of Statistical Methods
+
+For language detection, traditional ML with TF-IDF often outperforms complex deep learning:
+
+- **Efficiency**: Fast training and inference with minimal computational resources
+- **Interpretability**: TF-IDF weights reveal which words are most discriminative per language
+- **Data Efficiency**: Achieves high accuracy without requiring massive datasets
+- **Robustness**: Generalizes well across different text domains
+
+<Info>
+The Europarl corpus provides high-quality, balanced data ideal for training robust classifiers. Parliamentary language is formal and well-structured, making it excellent training data.
+</Info>
+
+## Next Steps
+
+Explore each component of the pipeline in detail:
+
+<CardGroup cols={3}>
+  <Card title="Dataset" icon="database" href="/concepts/dataset">
+    Learn about the Europarl corpus structure and characteristics
+  </Card>
+  
+  <Card title="Preprocessing" icon="broom" href="/concepts/preprocessing">
+    Understand text cleaning and normalization techniques
+  </Card>
+  
+  <Card title="Vectorization" icon="vector-square" href="/concepts/vectorization">
+    Dive into TF-IDF feature extraction
+  </Card>
+</CardGroup>

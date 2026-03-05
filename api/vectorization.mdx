@@ -1,0 +1,385 @@
+---
+title: 'Vectorization API'
+description: 'Text vectorization methods for converting text to numerical features'
+---
+
+## Overview
+
+The vectorization module provides methods to convert preprocessed text into numerical feature vectors suitable for machine learning models. The system supports multiple vectorization strategies optimized for language detection.
+
+## TF-IDF Vectorization
+
+### TfidfVectorizer
+
+The primary vectorization method using Term Frequency-Inverse Document Frequency (TF-IDF).
+
+```python
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+vectorizer = TfidfVectorizer(
+    max_features=5000,
+    min_df=2,
+    max_df=0.95,
+    ngram_range=(1, 2),
+    analyzer='word',
+    use_idf=True,
+    smooth_idf=True
+)
+```
+
+### Parameters
+
+<ParamField path="max_features" type="int" default="None">
+  Maximum number of features (vocabulary size). Commonly set to `5000` for language detection tasks.
+</ParamField>
+
+<ParamField path="min_df" type="int | float" default="1">
+  Minimum document frequency. Features appearing in fewer documents are ignored. Recommended value: `2`.
+</ParamField>
+
+<ParamField path="max_df" type="float" default="1.0">
+  Maximum document frequency. Features appearing in more than this proportion of documents are ignored. Recommended value: `0.95` to filter common words.
+</ParamField>
+
+<ParamField path="ngram_range" type="tuple" default="(1, 1)">
+  Range of n-grams to extract. `(1, 2)` extracts unigrams and bigrams.
+</ParamField>
+
+<ParamField path="analyzer" type="str" default="'word'">
+  Analysis level: `'word'` for word-level features or `'char'` for character-level features.
+</ParamField>
+
+<ParamField path="use_idf" type="bool" default="True">
+  Enable inverse-document-frequency reweighting.
+</ParamField>
+
+<ParamField path="smooth_idf" type="bool" default="True">
+  Smooth IDF weights by adding one to document frequencies.
+</ParamField>
+
+### Methods
+
+#### fit(X, y=None)
+
+Learn vocabulary and IDF weights from training data.
+
+<ParamField path="X" type="iterable" required>
+  An iterable of text documents (list of strings or pandas Series).
+</ParamField>
+
+<ParamField path="y" type="array-like" default="None">
+  Target labels (not used, present for API consistency).
+</ParamField>
+
+<ResponseField name="return" type="TfidfVectorizer">
+  Returns self (the fitted vectorizer).
+</ResponseField>
+
+#### transform(X)
+
+Transform documents to TF-IDF feature matrix.
+
+<ParamField path="X" type="iterable" required>
+  An iterable of text documents to transform.
+</ParamField>
+
+<ResponseField name="return" type="scipy.sparse.csr_matrix">
+  TF-IDF-weighted document-term matrix with shape `(n_documents, n_features)`.
+</ResponseField>
+
+#### fit_transform(X, y=None)
+
+Learn vocabulary and IDF weights, then transform documents.
+
+<ParamField path="X" type="iterable" required>
+  An iterable of text documents.
+</ParamField>
+
+<ParamField path="y" type="array-like" default="None">
+  Target labels (not used).
+</ParamField>
+
+<ResponseField name="return" type="scipy.sparse.csr_matrix">
+  TF-IDF-weighted document-term matrix.
+</ResponseField>
+
+---
+
+## Vectorization Strategies
+
+### Character-based TF-IDF
+
+Optimal for language detection due to character-level patterns unique to each language.
+
+```python
+vectorizer = TfidfVectorizer(
+    analyzer='char',
+    ngram_range=(2, 4)
+)
+
+X_train_vec = vectorizer.fit_transform(X_train)
+X_val_vec = vectorizer.transform(X_val)
+```
+
+**Advantages:**
+- Captures language-specific character patterns
+- Robust to spelling variations
+- Works well with short texts
+
+**Configuration:**
+- `analyzer='char'` - Use character-level features
+- `ngram_range=(2, 4)` - Extract 2-grams, 3-grams, and 4-grams
+
+### Word-based TF-IDF
+
+Uses word-level features with n-grams.
+
+```python
+vectorizer = TfidfVectorizer(
+    analyzer='word',
+    ngram_range=(1, 2),
+    max_features=5000,
+    min_df=2
+)
+
+X_train_vec = vectorizer.fit_transform(X_train)
+X_val_vec = vectorizer.transform(X_val)
+```
+
+**Advantages:**
+- Captures word choice patterns
+- Lower dimensionality than character n-grams
+- Better interpretability
+
+**Configuration:**
+- `analyzer='word'` - Use word-level features
+- `ngram_range=(1, 2)` - Extract unigrams and bigrams
+- `max_features=5000` - Limit vocabulary size
+- `min_df=2` - Remove rare words
+
+---
+
+## Custom Vectorizers
+
+### LetterFrequencyVectorizer
+
+A custom vectorizer that computes letter frequency distributions.
+
+```python
+from sklearn.base import BaseEstimator, TransformerMixin
+import numpy as np
+
+class LetterFrequencyVectorizer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        self.alphabet = list("abcdefghijklmnopqrstuvwxyzáéíóúüñ")
+    
+    def fit(self, X, y=None):
+        return self
+    
+    def transform(self, X):
+        vectors = []
+        for text in X:
+            text = text.lower()
+            total = len(text)
+            freq = [text.count(c) / total if total > 0 else 0 for c in self.alphabet]
+            vectors.append(freq)
+        return np.array(vectors)
+```
+
+<ParamField path="alphabet" type="list" default="[a-z, á, é, í, ó, ú, ü, ñ]">
+  List of characters to compute frequencies for. Includes accented characters common in European languages.
+</ParamField>
+
+#### Methods
+
+**fit(X, y=None)** - No-op method for API consistency
+
+**transform(X)** - Computes letter frequency vectors
+
+<ParamField path="X" type="iterable" required>
+  An iterable of text documents.
+</ParamField>
+
+<ResponseField name="return" type="np.ndarray">
+  Array of shape `(n_documents, n_letters)` containing normalized letter frequencies.
+</ResponseField>
+
+#### Example
+
+```python
+vectorizer = LetterFrequencyVectorizer()
+X_train_vec = vectorizer.fit_transform(X_train)
+X_val_vec = vectorizer.transform(X_val)
+
+# Train a classifier
+from sklearn.naive_bayes import MultinomialNB
+model = MultinomialNB()
+model.fit(X_train_vec, y_train)
+```
+
+---
+
+## Alternative Vectorizers
+
+### HashingVectorizer
+
+Memory-efficient vectorization using hashing.
+
+```python
+from sklearn.feature_extraction.text import HashingVectorizer
+
+vectorizer = HashingVectorizer(
+    analyzer='char',
+    ngram_range=(2, 4),
+    n_features=2**18,
+    alternate_sign=False
+)
+
+X_train_vec = vectorizer.transform(X_train)
+X_val_vec = vectorizer.transform(X_val)
+```
+
+<ParamField path="n_features" type="int" default="2**20">
+  Number of features (hash buckets). Use `2**18` (262,144) for language detection.
+</ParamField>
+
+<ParamField path="alternate_sign" type="bool" default="True">
+  Set to `False` to ensure all feature values are non-negative (required for some algorithms like Naive Bayes).
+</ParamField>
+
+**Advantages:**
+- Constant memory footprint
+- No vocabulary needed
+- Fast transformation
+
+**Disadvantages:**
+- Hash collisions may occur
+- Features are not interpretable
+- Cannot use `inverse_transform()`
+
+### CountVectorizer
+
+Simple word count vectorization.
+
+```python
+from sklearn.feature_extraction.text import CountVectorizer
+
+vectorizer = CountVectorizer(
+    max_features=5000,
+    min_df=2,
+    ngram_range=(1, 2)
+)
+```
+
+Similar to TfidfVectorizer but without IDF weighting.
+
+---
+
+## Complete Vectorization Function
+
+```python
+import time
+from sklearn.feature_extraction.text import TfidfVectorizer, HashingVectorizer
+
+def vectorizar_datos(X_train, X_val, tipo_vectorizacion):
+    """
+    Applies specified vectorization and returns vectorized data.
+    
+    Args:
+        X_train: Training texts
+        X_val: Validation texts
+        tipo_vectorizacion: Type of vectorization
+            - 'chars-tf-idf': Character-based TF-IDF
+            - 'words-tf-idf': Word-based TF-IDF
+            - 'letter-frequency': Letter frequency distribution
+            - 'hashing': Hashing vectorizer
+    
+    Returns:
+        tuple: (X_train_vec, X_val_vec, vectorizer, tiempo_vectorizacion)
+    """
+    inicio = time.time()
+    
+    if tipo_vectorizacion == 'chars-tf-idf':
+        vectorizer = TfidfVectorizer(analyzer='char', ngram_range=(2, 4))
+    
+    elif tipo_vectorizacion == 'words-tf-idf':
+        vectorizer = TfidfVectorizer(analyzer='word', ngram_range=(1, 2))
+    
+    elif tipo_vectorizacion == 'letter-frequency':
+        vectorizer = LetterFrequencyVectorizer()
+    
+    elif tipo_vectorizacion == 'hashing':
+        vectorizer = HashingVectorizer(
+            analyzer='char',
+            ngram_range=(2, 4),
+            n_features=2**18,
+            alternate_sign=False
+        )
+    
+    else:
+        raise ValueError(f"Unknown vectorization type: '{tipo_vectorizacion}'")
+    
+    # Fit and transform
+    X_train_vec = vectorizer.fit_transform(X_train)
+    X_val_vec = vectorizer.transform(X_val)
+    
+    tiempo_vectorizacion = time.time() - inicio
+    print(f"Vectorization time: {tiempo_vectorizacion:.2f} seconds")
+    
+    return X_train_vec, X_val_vec, vectorizer, tiempo_vectorizacion
+```
+
+### Example Usage
+
+<CodeGroup>
+```python Character-based
+X_train_vec, X_val_vec, vectorizer, _ = vectorizar_datos(
+    X_train, X_val, 'chars-tf-idf'
+)
+print(f"Training matrix shape: {X_train_vec.shape}")
+print(f"Validation matrix shape: {X_val_vec.shape}")
+```
+
+```python Word-based
+X_train_vec, X_val_vec, vectorizer, _ = vectorizar_datos(
+    X_train, X_val, 'words-tf-idf'
+)
+```
+
+```python Letter Frequency
+X_train_vec, X_val_vec, vectorizer, _ = vectorizar_datos(
+    X_train, X_val, 'letter-frequency'
+)
+```
+</CodeGroup>
+
+---
+
+## Performance Considerations
+
+### Memory Usage
+
+- **TfidfVectorizer**: Memory proportional to vocabulary size
+- **HashingVectorizer**: Fixed memory footprint
+- **LetterFrequencyVectorizer**: Minimal memory (34 features per document)
+
+### Speed
+
+- **Character n-grams**: Slower than word n-grams but more accurate
+- **Hashing**: Fastest transformation
+- **Letter frequency**: Fast but lower accuracy
+
+### Accuracy
+
+For language detection:
+1. Character TF-IDF (highest accuracy)
+2. Word TF-IDF
+3. Letter frequency (lowest accuracy but fastest)
+
+---
+
+## Related Documentation
+
+- [Preprocessing API](/api/preprocessing) - Prepare text before vectorization
+- [Models API](/api/models) - Train classifiers on vectorized features
+- [Training Guide](/guides/training) - Optimize vectorization parameters

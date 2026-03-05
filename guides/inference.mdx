@@ -1,0 +1,609 @@
+---
+title: 'Model Inference'
+description: 'Deploy and use trained language detection models for predictions'
+---
+
+## Overview
+
+Once your model is trained and evaluated, you can use it to detect languages in new text. This guide covers loading models, making predictions, batch processing, and deployment strategies.
+
+## Quick Start
+
+Detect the language of a text in 3 lines:
+
+```python
+import joblib
+
+model = joblib.load('language_detector_model.pkl')
+vectorizer = joblib.load('tfidf_vectorizer.pkl')
+
+text = "Bonjour, comment allez-vous?"
+X = vectorizer.transform([text])
+language = model.predict(X)[0]
+print(f"Detected language: {language}")  # Output: fr
+```
+
+## Complete Inference Pipeline
+
+<Steps>
+
+### Step 1: Create a Prediction Class
+
+Build a reusable class for language detection:
+
+```python
+import joblib
+import numpy as np
+from typing import List, Dict, Tuple
+
+class LanguageDetector:
+    """Language detection inference class."""
+    
+    def __init__(self, model_path: str, vectorizer_path: str):
+        """Load model and vectorizer.
+        
+        Args:
+            model_path: Path to saved model file
+            vectorizer_path: Path to saved vectorizer file
+        """
+        self.model = joblib.load(model_path)
+        self.vectorizer = joblib.load(vectorizer_path)
+        
+        # Language mapping
+        self.language_names = {
+            "es": "Spanish",
+            "fr": "French",
+            "de": "German",
+            "it": "Italian",
+            "pt": "Portuguese",
+            "nl": "Dutch",
+            "sv": "Swedish"
+        }
+        
+    def predict(self, text: str) -> str:
+        """Predict language of a single text.
+        
+        Args:
+            text: Input text string
+            
+        Returns:
+            Language code (e.g., 'es', 'fr')
+        """
+        X = self.vectorizer.transform([text])
+        prediction = self.model.predict(X)[0]
+        return prediction
+    
+    def predict_proba(self, text: str) -> Dict[str, float]:
+        """Get probability distribution over languages.
+        
+        Args:
+            text: Input text string
+            
+        Returns:
+            Dictionary mapping language codes to probabilities
+        """
+        X = self.vectorizer.transform([text])
+        probas = self.model.predict_proba(X)[0]
+        
+        # Get language classes
+        classes = self.model.classes_
+        
+        # Create sorted dictionary
+        lang_probas = {lang: prob for lang, prob in zip(classes, probas)}
+        return dict(sorted(lang_probas.items(), 
+                          key=lambda x: x[1], 
+                          reverse=True))
+    
+    def predict_batch(self, texts: List[str]) -> List[str]:
+        """Predict languages for multiple texts.
+        
+        Args:
+            texts: List of input text strings
+            
+        Returns:
+            List of language codes
+        """
+        X = self.vectorizer.transform(texts)
+        predictions = self.model.predict(X)
+        return predictions.tolist()
+    
+    def get_language_name(self, code: str) -> str:
+        """Convert language code to full name.
+        
+        Args:
+            code: Language code (e.g., 'es')
+            
+        Returns:
+            Full language name (e.g., 'Spanish')
+        """
+        return self.language_names.get(code, code)
+```
+
+### Step 2: Initialize the Detector
+
+Load your trained model:
+
+```python
+# Initialize detector
+detector = LanguageDetector(
+    model_path='language_detector_model.pkl',
+    vectorizer_path='tfidf_vectorizer.pkl'
+)
+
+print("Language detector ready!")
+```
+
+### Step 3: Make Single Predictions
+
+Detect language for individual texts:
+
+```python
+# Example texts in different languages
+examples = [
+    "Hola, ¿cómo estás?",                    # Spanish
+    "Bonjour, comment allez-vous?",          # French
+    "Guten Tag, wie geht es Ihnen?",         # German
+    "Ciao, come stai?",                      # Italian
+    "Olá, como você está?",                  # Portuguese
+    "Hallo, hoe gaat het met je?",           # Dutch
+    "Hej, hur mår du?"                       # Swedish
+]
+
+print("\n=== Single Predictions ===")
+for text in examples:
+    lang_code = detector.predict(text)
+    lang_name = detector.get_language_name(lang_code)
+    print(f"{text:40} -> {lang_name} ({lang_code})")
+```
+
+Output:
+```
+=== Single Predictions ===
+Hola, ¿cómo estás?                       -> Spanish (es)
+Bonjour, comment allez-vous?             -> French (fr)
+Guten Tag, wie geht es Ihnen?           -> German (de)
+Ciao, come stai?                         -> Italian (it)
+Olá, como você está?                     -> Portuguese (pt)
+Hallo, hoe gaat het met je?             -> Dutch (nl)
+Hej, hur mår du?                         -> Swedish (sv)
+```
+
+### Step 4: Get Confidence Scores
+
+Retrieve probability distributions:
+
+```python
+text = "Je pense que c'est une bonne idée"
+
+print(f"\nText: {text}")
+print("\nLanguage Probabilities:")
+
+probabilities = detector.predict_proba(text)
+for lang, prob in probabilities.items():
+    lang_name = detector.get_language_name(lang)
+    print(f"  {lang_name:12} ({lang}): {prob:.4f} ({prob*100:.2f}%)")
+```
+
+Output:
+```
+Text: Je pense que c'est une bonne idée
+
+Language Probabilities:
+  French      (fr): 0.9987 (99.87%)
+  Italian     (it): 0.0008 (0.08%)
+  Spanish     (es): 0.0003 (0.03%)
+  Portuguese  (pt): 0.0001 (0.01%)
+  Dutch       (nl): 0.0001 (0.01%)
+  German      (de): 0.0000 (0.00%)
+  Swedish     (sv): 0.0000 (0.00%)
+```
+
+<Tip>
+High confidence (>95%) indicates reliable predictions. Lower confidence may suggest mixed languages or ambiguous text.
+</Tip>
+
+### Step 5: Batch Processing
+
+Process multiple texts efficiently:
+
+```python
+import time
+
+# Large batch of texts
+texts = [
+    "El sol brilla en el cielo",
+    "La vie est belle",
+    "Das Wetter ist schön",
+    # ... add more texts
+] * 100  # 300+ texts
+
+print(f"\nProcessing {len(texts)} texts...")
+
+start_time = time.time()
+predictions = detector.predict_batch(texts)
+elapsed = time.time() - start_time
+
+print(f"Processed {len(texts)} texts in {elapsed:.2f}s")
+print(f"Speed: {len(texts)/elapsed:.0f} texts/second")
+
+# Show distribution
+from collections import Counter
+lang_counts = Counter(predictions)
+
+print("\nLanguage Distribution:")
+for lang, count in lang_counts.most_common():
+    lang_name = detector.get_language_name(lang)
+    print(f"  {lang_name:12}: {count:4} ({count/len(texts)*100:.1f}%)")
+```
+
+</Steps>
+
+## Advanced Usage
+
+### Handle Edge Cases
+
+Deal with unusual inputs:
+
+```python
+def robust_predict(detector, text: str) -> Tuple[str, float]:
+    """Predict with confidence threshold and validation.
+    
+    Args:
+        detector: LanguageDetector instance
+        text: Input text
+        
+    Returns:
+        Tuple of (language_code, confidence)
+    """
+    # Validate input
+    if not text or len(text.strip()) < 3:
+        return "unknown", 0.0
+    
+    # Get probabilities
+    probas = detector.predict_proba(text)
+    top_lang = list(probas.keys())[0]
+    confidence = probas[top_lang]
+    
+    # Apply confidence threshold
+    if confidence < 0.7:
+        return "uncertain", confidence
+    
+    return top_lang, confidence
+
+# Test edge cases
+edge_cases = [
+    "",                          # Empty
+    "123",                      # Numbers only
+    ":-)",                      # Emoticons
+    "Hello world",              # English (not in training)
+    "Hola je suis content",     # Mixed languages
+]
+
+print("\n=== Edge Cases ===")
+for text in edge_cases:
+    lang, conf = robust_predict(detector, text)
+    print(f"Text: '{text:30}' -> {lang} (conf: {conf:.2f})")
+```
+
+### Create a REST API
+
+Deploy as a web service using Flask:
+
+```python
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# Initialize detector globally
+detector = LanguageDetector(
+    'language_detector_model.pkl',
+    'tfidf_vectorizer.pkl'
+)
+
+@app.route('/detect', methods=['POST'])
+def detect_language():
+    """Detect language endpoint.
+    
+    Request body:
+        {"text": "Bonjour le monde"}
+    
+    Response:
+        {"language": "fr", "confidence": 0.998}
+    """
+    try:
+        data = request.get_json()
+        text = data.get('text', '')
+        
+        if not text:
+            return jsonify({'error': 'No text provided'}), 400
+        
+        # Predict
+        probas = detector.predict_proba(text)
+        top_lang = list(probas.keys())[0]
+        confidence = probas[top_lang]
+        
+        return jsonify({
+            'language': top_lang,
+            'language_name': detector.get_language_name(top_lang),
+            'confidence': float(confidence),
+            'all_languages': {k: float(v) for k, v in probas.items()}
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/detect/batch', methods=['POST'])
+def detect_batch():
+    """Batch detection endpoint.
+    
+    Request body:
+        {"texts": ["Hola", "Bonjour", "Ciao"]}
+    
+    Response:
+        {"predictions": ["es", "fr", "it"]}
+    """
+    try:
+        data = request.get_json()
+        texts = data.get('texts', [])
+        
+        if not texts:
+            return jsonify({'error': 'No texts provided'}), 400
+        
+        predictions = detector.predict_batch(texts)
+        
+        return jsonify({
+            'predictions': predictions,
+            'count': len(predictions)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000, debug=False)
+```
+
+Run the API:
+```bash
+python api.py
+```
+
+Test it:
+```bash
+# Single detection
+curl -X POST http://localhost:5000/detect \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Bonjour le monde"}'
+
+# Batch detection
+curl -X POST http://localhost:5000/detect/batch \
+  -H "Content-Type: application/json" \
+  -d '{"texts": ["Hola", "Bonjour", "Ciao"]}'
+```
+
+<Warning>
+For production deployment:
+- Use a production WSGI server (gunicorn, uwsgi)
+- Add authentication
+- Implement rate limiting
+- Add monitoring and logging
+</Warning>
+
+### Command-Line Tool
+
+Create a CLI for quick testing:
+
+```python
+import argparse
+import sys
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Detect language of text'
+    )
+    parser.add_argument(
+        'text',
+        nargs='*',
+        help='Text to analyze (or use --file)'
+    )
+    parser.add_argument(
+        '--file', '-f',
+        help='Read text from file'
+    )
+    parser.add_argument(
+        '--model', '-m',
+        default='language_detector_model.pkl',
+        help='Path to model file'
+    )
+    parser.add_argument(
+        '--vectorizer', '-v',
+        default='tfidf_vectorizer.pkl',
+        help='Path to vectorizer file'
+    )
+    parser.add_argument(
+        '--probabilities', '-p',
+        action='store_true',
+        help='Show probability distribution'
+    )
+    
+    args = parser.parse_args()
+    
+    # Initialize detector
+    detector = LanguageDetector(args.model, args.vectorizer)
+    
+    # Get text
+    if args.file:
+        with open(args.file, 'r', encoding='utf-8') as f:
+            text = f.read()
+    elif args.text:
+        text = ' '.join(args.text)
+    else:
+        print("Error: Provide text or --file")
+        sys.exit(1)
+    
+    # Predict
+    if args.probabilities:
+        probas = detector.predict_proba(text)
+        print(f"Text: {text}\n")
+        print("Probabilities:")
+        for lang, prob in probas.items():
+            name = detector.get_language_name(lang)
+            print(f"  {name:12} ({lang}): {prob:.4f}")
+    else:
+        lang = detector.predict(text)
+        name = detector.get_language_name(lang)
+        print(f"{name} ({lang})")
+
+if __name__ == '__main__':
+    main()
+```
+
+Usage:
+```bash
+# Detect from command line
+python detect.py "Bonjour tout le monde"
+
+# With probabilities
+python detect.py -p "Hola amigos"
+
+# From file
+python detect.py --file document.txt
+```
+
+## Performance Optimization
+
+### Caching Results
+
+Cache frequent predictions:
+
+```python
+from functools import lru_cache
+
+class CachedLanguageDetector(LanguageDetector):
+    @lru_cache(maxsize=1000)
+    def predict_cached(self, text: str) -> str:
+        """Cached prediction for repeated texts."""
+        return self.predict(text)
+```
+
+### Parallel Processing
+
+Process large batches faster:
+
+```python
+from concurrent.futures import ProcessPoolExecutor
+import multiprocessing
+
+def parallel_predict(texts: List[str], 
+                    n_workers: int = None) -> List[str]:
+    """Parallel batch prediction.
+    
+    Args:
+        texts: List of input texts
+        n_workers: Number of workers (default: CPU count)
+        
+    Returns:
+        List of predictions
+    """
+    if n_workers is None:
+        n_workers = multiprocessing.cpu_count()
+    
+    # Split into chunks
+    chunk_size = len(texts) // n_workers
+    chunks = [texts[i:i+chunk_size] 
+              for i in range(0, len(texts), chunk_size)]
+    
+    # Process in parallel
+    with ProcessPoolExecutor(max_workers=n_workers) as executor:
+        results = list(executor.map(detector.predict_batch, chunks))
+    
+    # Flatten results
+    return [pred for chunk in results for pred in chunk]
+```
+
+## Integration Examples
+
+### Web Application (Streamlit)
+
+```python
+import streamlit as st
+
+st.title("🌍 Language Detector")
+
+# Initialize detector
+@st.cache_resource
+def load_detector():
+    return LanguageDetector(
+        'language_detector_model.pkl',
+        'tfidf_vectorizer.pkl'
+    )
+
+detector = load_detector()
+
+# Input
+text = st.text_area("Enter text:", height=100)
+
+if st.button("Detect Language"):
+    if text:
+        probas = detector.predict_proba(text)
+        top_lang = list(probas.keys())[0]
+        
+        st.success(f"**Detected:** {detector.get_language_name(top_lang)}")
+        
+        # Show probabilities
+        st.bar_chart(probas)
+    else:
+        st.warning("Please enter some text")
+```
+
+### Data Pipeline (pandas)
+
+```python
+import pandas as pd
+
+# Load data
+df = pd.read_csv('documents.csv')
+
+# Detect languages
+df['language'] = detector.predict_batch(df['text'].tolist())
+
+# Add confidence scores
+def get_confidence(text):
+    probas = detector.predict_proba(text)
+    return list(probas.values())[0]
+
+df['confidence'] = df['text'].apply(get_confidence)
+
+# Filter by confidence
+df_high_conf = df[df['confidence'] > 0.95]
+
+print(f"High confidence: {len(df_high_conf)}/{len(df)}")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Training" icon="graduation-cap" href="/guides/training">
+    Improve your model with better training
+  </Card>
+  <Card title="Evaluation" icon="chart-line" href="/guides/evaluation">
+    Assess model performance in production
+  </Card>
+</CardGroup>
+
+## Troubleshooting
+
+**Predictions are slow:**
+- Use batch processing for multiple texts
+- Consider model quantization
+- Cache frequent predictions
+
+**Unexpected predictions:**
+- Check input text length (minimum 3-5 characters)
+- Verify text is in one of the 7 trained languages
+- Review confidence scores
+
+**Memory issues:**
+- Process in smaller batches
+- Use model compression techniques
+- Consider deploying on a server with more RAM

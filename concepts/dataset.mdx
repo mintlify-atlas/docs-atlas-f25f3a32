@@ -1,0 +1,219 @@
+---
+title: 'Dataset'
+description: 'Europarl Parallel Corpus: 7 European languages from parliamentary proceedings'
+---
+
+## Europarl Parallel Corpus
+
+The **Europarl Parallel Corpus** contains proceedings from the European Parliament, providing high-quality multilingual text data. This corpus is widely used in NLP research for machine translation and language identification tasks.
+
+<Info>
+**Source**: [Europarl Parallel Corpus](https://www.statmt.org/europarl/)
+
+**Domain**: Parliamentary proceedings from the European Union
+
+**Quality**: Professional translations and transcriptions with formal, structured language
+</Info>
+
+## Dataset Structure
+
+Our processed dataset contains:
+
+<CardGroup cols={2}>
+  <Card title="Total Samples" icon="hashtag">
+    49,000 text samples (7,000 per language)
+  </Card>
+  
+  <Card title="Languages" icon="language">
+    7 European languages
+  </Card>
+  
+  <Card title="Balance" icon="scale-balanced">
+    Perfectly balanced with equal samples per language
+  </Card>
+  
+  <Card title="Format" icon="file-csv">
+    CSV with text and language label columns
+  </Card>
+</CardGroup>
+
+### File Format
+
+The dataset is stored as `europarl_multilang_dataset_7000.csv` with two columns:
+
+```csv
+texto,idioma
+Reanudación del período de sesiones,es
+"(El Parlamento, de pie, guarda un minuto de silencio)",es
+Wiederaufnahme der Sitzungsperiode,de
+"Ich bitte Sie, sich zu einer Schweigeminute zu erheben.",de
+```
+
+<ResponseField name="texto" type="string" required>
+  The text content in the source language
+</ResponseField>
+
+<ResponseField name="idioma" type="string" required>
+  Two-letter ISO language code (es, de, fr, it, nl, pt, sv)
+</ResponseField>
+
+## Languages Included
+
+The dataset covers 7 European languages representing different language families:
+
+<AccordionGroup>
+  <Accordion title="Spanish (es) - 7,000 samples" icon="es">
+    **Romance language** - Examples:
+    - "Reanudación del período de sesiones"
+    - "Señora Presidenta, una cuestión de procedimiento."
+    
+    Spanish uses characteristic articles (el, la) and verb conjugations that make it highly distinguishable.
+  </Accordion>
+  
+  <Accordion title="German (de) - 7,000 samples" icon="de">
+    **Germanic language** - Examples:
+    - "Wiederaufnahme der Sitzungsperiode"
+    - "Frau Präsidentin, eine Frage zur Geschäftsordnung."
+    
+    German features compound words and distinctive articles (der, die, das).
+  </Accordion>
+  
+  <Accordion title="French (fr) - 7,000 samples" icon="fr">
+    **Romance language** - Examples:
+    - "Reprise de la session"
+    - "Madame la Présidente, c'est une motion de procédure."
+    
+    French uses accented characters (é, è, ê) and articles (le, la, les).
+  </Accordion>
+  
+  <Accordion title="Italian (it) - 7,000 samples" icon="it">
+    **Romance language** - Examples:
+    - "Ripresa della sessione"
+    - "Signora Presidente, è una questione procedurale."
+    
+    Italian features distinctive endings (-zione, -ità) and double consonants.
+  </Accordion>
+  
+  <Accordion title="Dutch (nl) - 7,000 samples" icon="nl">
+    **Germanic language** - Examples:
+    - "Hervatting van de zitting"
+    - "Mevrouw de Voorzitter, dit is een motie van orde."
+    
+    Dutch uses distinctive digraphs (ij, oe) and articles (de, het).
+  </Accordion>
+  
+  <Accordion title="Portuguese (pt) - 7,000 samples" icon="pt">
+    **Romance language** - Examples:
+    - "Reinício da sessão"
+    - "Senhora Presidente, é uma questão de ordem."
+    
+    Portuguese features tildes (ã, õ) and distinctive verb forms.
+  </Accordion>
+  
+  <Accordion title="Swedish (sv) - 7,000 samples" icon="sv">
+    **Germanic language** - Examples:
+    - "Återupptagande av sessionen"
+    - "Fru talman, det här är en ordningsfråga."
+    
+    Swedish uses unique characters (å, ä, ö) and compound words.
+  </Accordion>
+</AccordionGroup>
+
+## Dataset Characteristics
+
+### Text Length Distribution
+
+Parliamentary proceedings contain varied text lengths:
+
+- **Short statements**: 5-20 words (e.g., procedural statements)
+- **Medium sentences**: 20-50 words (typical parliamentary remarks)
+- **Long passages**: 50+ words (detailed explanations and arguments)
+
+<Note>
+The variety in text length ensures the model learns to identify languages from both short and long text samples, improving robustness.
+</Note>
+
+### Domain-Specific Vocabulary
+
+The parliamentary domain includes:
+
+<CardGroup cols={3}>
+  <Card title="Political Terms" icon="landmark">
+    Commission, Parliament, Council, Member States
+  </Card>
+  
+  <Card title="Procedural Language" icon="gavel">
+    Amendments, resolutions, votes, questions
+  </Card>
+  
+  <Card title="Formal Register" icon="scroll">
+    Titles, formal addresses, official terminology
+  </Card>
+</CardGroup>
+
+### Data Quality
+
+<Check>**Professional transcriptions** - High accuracy and proper formatting</Check>
+<Check>**Balanced representation** - Equal samples prevent class imbalance</Check>
+<Check>**Clean text** - Minimal noise, consistent structure</Check>
+<Check>**Parallel content** - Same topics across languages aid comparison</Check>
+
+## Loading the Dataset
+
+The dataset is loaded as a pandas DataFrame:
+
+```python
+import pandas as pd
+
+# Load the dataset
+df = pd.read_csv('dataset/europarl_multilang_dataset_7000.csv')
+
+# Display basic information
+print(f"Total samples: {len(df)}")
+print(f"\nLanguage distribution:")
+print(df['idioma'].value_counts())
+```
+
+**Expected output:**
+```
+Total samples: 49000
+
+Language distribution:
+de    7000
+es    7000
+fr    7000
+it    7000
+nl    7000
+pt    7000
+sv    7000
+Name: idioma, dtype: int64
+```
+
+<Tip>
+The perfect balance across languages eliminates the need for stratified sampling or class weighting during model training.
+</Tip>
+
+## Why Europarl?
+
+The Europarl corpus offers several advantages for language detection:
+
+1. **Multilingual by Design**: All languages cover similar topics, making linguistic features the primary distinguishing factor
+2. **High Quality**: Professional translations ensure grammatical correctness and proper language use
+3. **Formal Register**: Consistent formality level reduces stylistic variation
+4. **Representative**: Covers political, economic, and social topics with rich vocabulary
+
+<Warning>
+While Europarl is excellent for training, the formal parliamentary style may perform differently on informal text (social media, colloquial speech). Consider domain adaptation for production use.
+</Warning>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Preprocessing" icon="broom" href="/concepts/preprocessing">
+    Learn how the text is cleaned and prepared
+  </Card>
+  
+  <Card title="Vectorization" icon="vector-square" href="/concepts/vectorization">
+    Discover how text becomes numerical features
+  </Card>
+</CardGroup>

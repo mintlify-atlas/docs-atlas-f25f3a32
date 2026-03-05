@@ -1,0 +1,127 @@
+---
+title: Models Overview
+description: Overview of all available language detection models and when to use each one
+---
+
+The Language Detection System implements multiple machine learning and deep learning models to classify text into seven European languages: Spanish (es), German (de), French (fr), Italian (it), Dutch (nl), Portuguese (pt), and Swedish (sv).
+
+## Available Models
+
+Our system provides two categories of models, each with different trade-offs:
+
+<CardGroup cols={2}>
+  <Card title="Traditional ML Models" icon="brain" href="/models/traditional-ml">
+    Fast, efficient, and highly accurate classical machine learning approaches
+  </Card>
+  <Card title="Deep Learning Models" icon="network-wired" href="/models/deep-learning">
+    Neural network architectures that learn sequential patterns in text
+  </Card>
+</CardGroup>
+
+## Quick Comparison
+
+| Model | Accuracy | Training Time | Inference Speed | Model Size |
+|-------|----------|---------------|-----------------|------------|
+| **Naive Bayes** | 99.92% | ~0.03s | ~0.01s | 29.84 MB |
+| **SVM** | 99.77% | ~0.59s | ~0.00s | 14.92 MB |
+| **Random Forest** | 99.41% | ~128s | ~0.66s | 230 MB |
+| **LSTM** | 94.07% | ~15 epochs | ~15ms/sample | 618 KB |
+| **BiLSTM** | 94.08% | ~15 epochs | ~30ms/sample | 618 KB |
+
+<Note>
+  All models were trained on the Europarl Parallel Corpus with 7,000 samples per language.
+</Note>
+
+## Model Selection Guide
+
+### When to Use Traditional ML
+
+Choose traditional ML models when you need:
+
+- **Maximum accuracy** (>99.9% on validation set)
+- **Fast training** (seconds instead of minutes)
+- **Quick inference** (milliseconds per prediction)
+- **Production-ready performance** with minimal resources
+
+**Recommended:** Naive Bayes with `alpha=0.5` achieves 99.92% accuracy with the best balance of speed and accuracy.
+
+### When to Use Deep Learning
+
+Choose deep learning models when you:
+
+- Want to learn **sequential patterns** in text
+- Need **interpretable embeddings** for downstream tasks
+- Are working with **noisy or out-of-vocabulary** words
+- Have sufficient computational resources for training
+
+**Recommended:** Bidirectional LSTM slightly outperforms unidirectional LSTM (94.08% vs 94.07%) and handles context better.
+
+## Feature Extraction
+
+All models use **TF-IDF vectorization** with word-level n-grams:
+
+- **Analyzer:** Word-based
+- **N-gram range:** (1, 2) - unigrams and bigrams
+- **Vocabulary size:** ~50K features for traditional ML
+- **Sequence length:** 95th percentile of training data for deep learning (~50 tokens)
+
+<Tabs>
+  <Tab title="Traditional ML">
+    ```python
+    from sklearn.feature_extraction.text import TfidfVectorizer
+    
+    vectorizer = TfidfVectorizer(
+        analyzer='word',
+        ngram_range=(1, 2)
+    )
+    X_train_vec = vectorizer.fit_transform(X_train)
+    ```
+  </Tab>
+  <Tab title="Deep Learning">
+    ```python
+    from tensorflow.keras.preprocessing.text import Tokenizer
+    from tensorflow.keras.preprocessing.sequence import pad_sequences
+    
+    tokenizer = Tokenizer(num_words=10000, oov_token="<OOV>")
+    tokenizer.fit_on_texts(X_train)
+    
+    sequences = tokenizer.texts_to_sequences(X_train)
+    X_train = pad_sequences(sequences, maxlen=max_length, padding='post')
+    ```
+  </Tab>
+</Tabs>
+
+## Performance Metrics
+
+### Best Performing Models by Language
+
+| Language | Best Traditional ML | Best Deep Learning |
+|----------|---------------------|--------------------|
+| Spanish (es) | NB: 0.9986 F1 | BiLSTM: 0.9272 F1 |
+| German (de) | NB: 0.9985 F1 | BiLSTM: 0.9659 F1 |
+| French (fr) | NB: 0.9995 F1 | BiLSTM: 0.9365 F1 |
+| Italian (it) | NB: 0.9995 F1 | LSTM: 0.8969 F1 |
+| Dutch (nl) | NB: 0.9995 F1 | LSTM: 0.9693 F1 |
+| Portuguese (pt) | NB: 0.9986 F1 | LSTM: 0.9369 F1 |
+| Swedish (sv) | NB: 1.0000 F1 | BiLSTM: 0.9747 F1 |
+
+<Note>
+  Traditional ML models consistently outperform deep learning models on this task due to the structured nature of the Europarl corpus.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Traditional ML Details" icon="chart-line" href="/models/traditional-ml">
+    Explore Naive Bayes, SVM, and Random Forest implementations
+  </Card>
+  <Card title="Deep Learning Details" icon="brain-circuit" href="/models/deep-learning">
+    Learn about LSTM and BiLSTM architectures
+  </Card>
+  <Card title="Model Comparison" icon="chart-bar" href="/models/comparison">
+    See detailed performance comparisons and metrics
+  </Card>
+  <Card title="Training Guide" icon="graduation-cap" href="/guides/training">
+    Learn how to train your own models
+  </Card>
+</CardGroup>

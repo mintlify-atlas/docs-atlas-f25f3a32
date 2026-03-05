@@ -1,0 +1,626 @@
+---
+title: 'Models API'
+description: 'Machine learning models for language classification'
+---
+
+## Overview
+
+The models module provides machine learning classifiers optimized for language detection. This documentation covers model instantiation, training, prediction, and evaluation.
+
+## Supported Models
+
+### MultinomialNB (Naive Bayes)
+
+Multinomial Naive Bayes classifier, optimal for text classification with discrete features.
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+
+model = MultinomialNB(alpha=1.0)
+```
+
+<ParamField path="alpha" type="float" default="1.0">
+  Additive (Laplace/Lidstone) smoothing parameter. Use `alpha=0.5` for better performance on language detection tasks.
+</ParamField>
+
+**Advantages:**
+- Fast training and prediction
+- Works well with sparse features (TF-IDF)
+- Requires minimal memory
+- Excellent baseline model
+
+**Recommended for:**
+- Character-based TF-IDF features
+- Large vocabularies
+- Real-time prediction
+
+#### Example
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+
+# Train model
+model = MultinomialNB(alpha=0.5)
+model.fit(X_train, y_train)
+
+# Predict
+y_pred = model.predict(X_val)
+accuracy = (y_pred == y_val).mean()
+print(f"Accuracy: {accuracy:.4f}")
+```
+
+---
+
+### LogisticRegression
+
+Logistic regression classifier with L2 regularization.
+
+```python
+from sklearn.linear_model import LogisticRegression
+
+model = LogisticRegression(max_iter=1000)
+```
+
+<ParamField path="max_iter" type="int" default="100">
+  Maximum number of iterations for solver convergence. Set to `1000` or higher for language detection.
+</ParamField>
+
+<ParamField path="C" type="float" default="1.0">
+  Inverse regularization strength. Smaller values specify stronger regularization.
+</ParamField>
+
+<ParamField path="solver" type="str" default="'lbfgs'">
+  Optimization algorithm. Options: `'lbfgs'`, `'liblinear'`, `'saga'`.
+</ParamField>
+
+<ParamField path="multi_class" type="str" default="'auto'">
+  Multi-class strategy. `'ovr'` (one-vs-rest) or `'multinomial'`.
+</ParamField>
+
+**Advantages:**
+- High accuracy
+- Provides probability estimates
+- Handles multi-class classification naturally
+
+#### Example
+
+```python
+from sklearn.linear_model import LogisticRegression
+
+model = LogisticRegression(max_iter=1000)
+model.fit(X_train, y_train)
+
+# Get probability predictions
+y_proba = model.predict_proba(X_val)
+print(f"Class probabilities shape: {y_proba.shape}")
+```
+
+---
+
+### LinearSVC (Support Vector Classifier)
+
+Linear Support Vector Classification.
+
+```python
+from sklearn.svm import LinearSVC
+
+model = LinearSVC()
+```
+
+<ParamField path="C" type="float" default="1.0">
+  Regularization parameter. Smaller values increase regularization.
+</ParamField>
+
+<ParamField path="max_iter" type="int" default="1000">
+  Maximum number of iterations.
+</ParamField>
+
+<ParamField path="loss" type="str" default="'squared_hinge'">
+  Loss function. Options: `'hinge'`, `'squared_hinge'`.
+</ParamField>
+
+**Advantages:**
+- Very high accuracy
+- Efficient with high-dimensional sparse data
+- Good generalization
+
+**Disadvantages:**
+- No built-in probability estimates
+- Slower training than Naive Bayes
+
+#### Example
+
+```python
+from sklearn.svm import LinearSVC
+
+model = LinearSVC()
+model.fit(X_train, y_train)
+
+y_pred = model.predict(X_val)
+```
+
+---
+
+### RandomForestClassifier
+
+Ensemble of decision trees.
+
+```python
+from sklearn.ensemble import RandomForestClassifier
+
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+```
+
+<ParamField path="n_estimators" type="int" default="100">
+  Number of trees in the forest.
+</ParamField>
+
+<ParamField path="max_depth" type="int" default="None">
+  Maximum depth of trees. `None` allows unlimited depth.
+</ParamField>
+
+<ParamField path="min_samples_split" type="int" default="2">
+  Minimum samples required to split an internal node.
+</ParamField>
+
+<ParamField path="random_state" type="int" default="None">
+  Random seed for reproducibility.
+</ParamField>
+
+**Note:** Random Forests work better with dense features (letter frequency) than sparse features (TF-IDF).
+
+---
+
+### HistGradientBoostingClassifier
+
+Histogram-based gradient boosting classifier.
+
+```python
+from sklearn.ensemble import HistGradientBoostingClassifier
+
+model = HistGradientBoostingClassifier()
+```
+
+**Advantages:**
+- Handles large datasets efficiently
+- Native support for missing values
+- Good accuracy
+
+**Note:** Best used with dense feature representations.
+
+---
+
+## Common Model Methods
+
+### fit
+
+Train the model on training data.
+
+```python
+model.fit(X_train, y_train)
+```
+
+<ParamField path="X_train" type="array-like | sparse matrix" required>
+  Training feature matrix of shape `(n_samples, n_features)`.
+</ParamField>
+
+<ParamField path="y_train" type="array-like" required>
+  Target labels of shape `(n_samples,)`.
+</ParamField>
+
+<ResponseField name="return" type="model">
+  Returns the fitted model instance.
+</ResponseField>
+
+---
+
+### predict
+
+Predict class labels for samples.
+
+```python
+y_pred = model.predict(X)
+```
+
+<ParamField path="X" type="array-like | sparse matrix" required>
+  Feature matrix of shape `(n_samples, n_features)`.
+</ParamField>
+
+<ResponseField name="return" type="np.ndarray">
+  Predicted class labels of shape `(n_samples,)`.
+</ResponseField>
+
+---
+
+### predict_proba
+
+Predict class probabilities (not available for LinearSVC).
+
+```python
+y_proba = model.predict_proba(X)
+```
+
+<ParamField path="X" type="array-like | sparse matrix" required>
+  Feature matrix of shape `(n_samples, n_features)`.
+</ParamField>
+
+<ResponseField name="return" type="np.ndarray">
+  Class probability matrix of shape `(n_samples, n_classes)`. Each row sums to 1.0.
+</ResponseField>
+
+#### Example
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+
+model = MultinomialNB()
+model.fit(X_train, y_train)
+
+# Get probabilities
+proba = model.predict_proba(X_val)
+print(f"Probabilities for first sample: {proba[0]}")
+print(f"Classes: {model.classes_}")
+
+# Get most confident prediction
+confidence = proba.max(axis=1)
+print(f"Average confidence: {confidence.mean():.4f}")
+```
+
+---
+
+## Training Function
+
+### entrenar_clasificador
+
+Train a classifier and measure performance metrics.
+
+```python
+def entrenar_clasificador(clasificador, X_train, y_train, X_val, y_val, nombre_clasificador):
+    """
+    Trains a classifier and measures computational performance metrics.
+    
+    Args:
+        clasificador: Classification model to train
+        X_train: Training features
+        y_train: Training labels
+        X_val: Validation features
+        y_val: Validation labels
+        nombre_clasificador: Descriptive name for the classifier
+    
+    Returns:
+        tuple: (trained_classifier, training_time, prediction_time, model_size, accuracy)
+    """
+```
+
+<ParamField path="clasificador" type="sklearn estimator" required>
+  Untrained scikit-learn classifier instance.
+</ParamField>
+
+<ParamField path="X_train" type="sparse matrix | array" required>
+  Training features.
+</ParamField>
+
+<ParamField path="y_train" type="array" required>
+  Training labels.
+</ParamField>
+
+<ParamField path="X_val" type="sparse matrix | array" required>
+  Validation features.
+</ParamField>
+
+<ParamField path="y_val" type="array" required>
+  Validation labels.
+</ParamField>
+
+<ParamField path="nombre_clasificador" type="str" required>
+  Name used for logging (e.g., "Naive Bayes with TF-IDF").
+</ParamField>
+
+<ResponseField name="return" type="tuple">
+  Returns `(classifier, train_time, pred_time, model_size_mb, accuracy)`:
+  - **classifier**: Trained model
+  - **train_time**: Training time in seconds
+  - **pred_time**: Prediction time in seconds
+  - **model_size_mb**: Serialized model size in megabytes
+  - **accuracy**: Validation accuracy
+</ResponseField>
+
+#### Metrics Collected
+
+- **Training time** - Time to fit the model
+- **Prediction time** - Time to predict on validation set
+- **Memory usage** - Memory increase during training (MB)
+- **Model size** - Size of serialized model file (MB)
+- **Accuracy** - Proportion of correct predictions
+
+#### Example
+
+```python
+import time
+import psutil
+import joblib
+import os
+import numpy as np
+from sklearn.naive_bayes import MultinomialNB
+
+def entrenar_clasificador(clasificador, X_train, y_train, X_val, y_val, nombre_clasificador):
+    print(f"Training {nombre_clasificador}...")
+    
+    # Track initial memory
+    proceso = psutil.Process()
+    memoria_inicial = proceso.memory_info().rss / (1024 * 1024)  # MB
+    
+    # Measure training time
+    inicio = time.time()
+    clasificador.fit(X_train, y_train)
+    tiempo_entrenamiento = time.time() - inicio
+    
+    # Track memory usage
+    memoria_final = proceso.memory_info().rss / (1024 * 1024)
+    memoria_usada = memoria_final - memoria_inicial
+    
+    # Estimate model size
+    with open('temp_model.joblib', 'wb') as f:
+        joblib.dump(clasificador, f)
+    tamaño_modelo = os.path.getsize('temp_model.joblib') / (1024 * 1024)
+    os.remove('temp_model.joblib')
+    
+    # Measure prediction time
+    inicio = time.time()
+    y_pred = clasificador.predict(X_val)
+    tiempo_prediccion = time.time() - inicio
+    
+    # Calculate accuracy
+    accuracy = np.mean(y_pred == y_val)
+    
+    print(f"  Training time: {tiempo_entrenamiento:.2f} seconds")
+    print(f"  Prediction time: {tiempo_prediccion:.2f} seconds")
+    print(f"  Memory used: {memoria_usada:.2f} MB")
+    print(f"  Model size: {tamaño_modelo:.2f} MB")
+    print(f"  Accuracy: {accuracy:.4f}")
+    
+    return clasificador, tiempo_entrenamiento, tiempo_prediccion, tamaño_modelo, accuracy
+
+# Usage
+from sklearn.naive_bayes import MultinomialNB
+
+model = MultinomialNB(alpha=0.5)
+resultado = entrenar_clasificador(
+    model, X_train_vec, y_train, X_val_vec, y_val,
+    "Naive Bayes (alpha=0.5)"
+)
+
+model_trained, train_time, pred_time, size_mb, acc = resultado
+```
+
+---
+
+## Model Comparison
+
+### comparar_modelos_ml
+
+Compare multiple models on the same dataset.
+
+```python
+def comparar_modelos_ml(clasificadores, X_train, X_val, y_train, y_val):
+    """
+    Compare multiple ML models.
+    
+    Args:
+        clasificadores: Dictionary of {name: model} pairs
+        X_train, X_val: Feature matrices
+        y_train, y_val: Labels
+    
+    Returns:
+        pd.DataFrame: Comparison results
+    """
+```
+
+#### Example
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+import pandas as pd
+
+clasificadores = {
+    'Naive Bayes': MultinomialNB(alpha=0.5),
+    'Logistic Regression': LogisticRegression(max_iter=1000),
+    'Linear SVC': LinearSVC()
+}
+
+resultados = []
+for nombre, modelo in clasificadores.items():
+    resultado = entrenar_clasificador(
+        modelo, X_train, y_train, X_val, y_val, nombre
+    )
+    resultados.append({
+        'Model': nombre,
+        'Accuracy': resultado[4],
+        'Train Time': resultado[1],
+        'Pred Time': resultado[2],
+        'Size (MB)': resultado[3]
+    })
+
+df_resultados = pd.DataFrame(resultados)
+print(df_resultados.sort_values('Accuracy', ascending=False))
+```
+
+---
+
+## Pipeline Integration
+
+### Using sklearn Pipeline
+
+Combine vectorization and classification in a single pipeline.
+
+```python
+from sklearn.pipeline import make_pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+# Create pipeline
+pipeline = make_pipeline(
+    TfidfVectorizer(analyzer='char', ngram_range=(2, 4)),
+    MultinomialNB(alpha=0.5)
+)
+
+# Train on raw text
+pipeline.fit(X_train_text, y_train)
+
+# Predict on raw text
+y_pred = pipeline.predict(X_val_text)
+```
+
+#### Advantages
+
+- Single `fit()` call trains entire pipeline
+- Prevents data leakage (vectorizer fitted only on training data)
+- Easy serialization with `joblib`
+- Simplified deployment
+
+#### Example: Save and Load Pipeline
+
+```python
+import joblib
+from sklearn.pipeline import make_pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+# Create and train pipeline
+pipeline = make_pipeline(
+    TfidfVectorizer(analyzer='char', ngram_range=(2, 4)),
+    MultinomialNB(alpha=0.5)
+)
+pipeline.fit(X_train_text, y_train)
+
+# Save pipeline
+joblib.dump(pipeline, 'language_detector.joblib')
+
+# Load pipeline
+loaded_pipeline = joblib.load('language_detector.joblib')
+
+# Use loaded pipeline
+predictions = loaded_pipeline.predict(['Bonjour le monde', 'Hello world'])
+print(predictions)  # ['fr', 'en']
+```
+
+---
+
+## Model Evaluation
+
+### evaluar_modelo
+
+Evaluate model performance with detailed metrics.
+
+```python
+from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
+
+def evaluar_modelo(modelo, X, y, etiquetas, conjunto='Validation'):
+    """
+    Evaluate model with comprehensive metrics.
+    
+    Args:
+        modelo: Trained model
+        X: Feature matrix
+        y: True labels
+        etiquetas: List of class labels
+        conjunto: Dataset name for display
+    """
+    y_pred = modelo.predict(X)
+    
+    print(f"\n{'='*50}")
+    print(f"{conjunto} Set Evaluation")
+    print(f"{'='*50}")
+    
+    # Accuracy
+    acc = accuracy_score(y, y_pred)
+    print(f"\nAccuracy: {acc:.4f}")
+    
+    # Classification report
+    print("\nClassification Report:")
+    print(classification_report(y, y_pred, target_names=etiquetas))
+    
+    # Confusion matrix
+    print("\nConfusion Matrix:")
+    cm = confusion_matrix(y, y_pred, labels=etiquetas)
+    print(cm)
+```
+
+#### Example
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+
+# Train model
+model = MultinomialNB(alpha=0.5)
+model.fit(X_train, y_train)
+
+# Evaluate
+languages = ['en', 'es', 'fr', 'de', 'it', 'nl', 'sv']
+evaluar_modelo(model, X_val, y_val, languages, 'Validation')
+evaluar_modelo(model, X_test, y_test, languages, 'Test')
+```
+
+---
+
+## Best Practices
+
+### Model Selection
+
+**For highest accuracy:**
+- LinearSVC with character TF-IDF
+- Logistic Regression with character TF-IDF
+
+**For fastest training:**
+- MultinomialNB with any vectorization
+
+**For real-time prediction:**
+- MultinomialNB with HashingVectorizer
+
+**For interpretability:**
+- Logistic Regression (feature weights)
+- MultinomialNB (class probabilities)
+
+### Hyperparameter Tuning
+
+```python
+from sklearn.model_selection import GridSearchCV
+from sklearn.pipeline import make_pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+# Define pipeline
+pipeline = make_pipeline(
+    TfidfVectorizer(analyzer='char'),
+    MultinomialNB()
+)
+
+# Define parameter grid
+param_grid = {
+    'tfidfvectorizer__ngram_range': [(2, 3), (2, 4), (3, 5)],
+    'multinomialnb__alpha': [0.1, 0.5, 1.0]
+}
+
+# Grid search
+grid_search = GridSearchCV(
+    pipeline, param_grid,
+    cv=5, scoring='accuracy',
+    verbose=2, n_jobs=-1
+)
+
+grid_search.fit(X_train_text, y_train)
+
+print(f"Best parameters: {grid_search.best_params_}")
+print(f"Best score: {grid_search.best_score_:.4f}")
+```
+
+---
+
+## Related Documentation
+
+- [Preprocessing API](/api/preprocessing) - Text preprocessing
+- [Vectorization API](/api/vectorization) - Feature extraction
+- [Training Guide](/guides/training) - Model training best practices
+- [Evaluation Guide](/guides/evaluation) - Performance metrics and analysis

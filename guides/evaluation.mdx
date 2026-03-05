@@ -1,0 +1,372 @@
+---
+title: 'Model Evaluation'
+description: 'Comprehensive guide to evaluate language detection models with metrics and visualizations'
+---
+
+## Overview
+
+Model evaluation is crucial for understanding your language detector's performance. This guide covers evaluation metrics, confusion matrices, per-language analysis, and visualization techniques.
+
+## Evaluation Metrics
+
+We use several metrics to assess model quality:
+
+- **Accuracy**: Overall correctness rate
+- **Precision**: Correctness of positive predictions per language
+- **Recall**: Coverage of actual instances per language
+- **F1-Score**: Harmonic mean of precision and recall
+
+## Complete Evaluation Pipeline
+
+<Steps>
+
+### Step 1: Load Model and Test Data
+
+First, load your trained model and prepare test data:
+
+```python
+import joblib
+import pandas as pd
+from sklearn.metrics import (
+    classification_report,
+    confusion_matrix,
+    accuracy_score,
+    precision_recall_fscore_support
+)
+
+# Load saved model and vectorizer
+model = joblib.load('language_detector_model.pkl')
+vectorizer = joblib.load('tfidf_vectorizer.pkl')
+
+# Load test data
+df_test = pd.read_csv('test_data.csv')
+
+# Transform test data
+X_test = vectorizer.transform(df_test['texto'])
+y_test = df_test['idioma']
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+print(f"Test set size: {len(y_test)} samples")
+```
+
+### Step 2: Calculate Overall Accuracy
+
+Compute the overall accuracy score:
+
+```python
+accuracy = accuracy_score(y_test, y_pred)
+print(f"\nOverall Accuracy: {accuracy:.4f} ({accuracy*100:.2f}%)")
+```
+
+### Step 3: Generate Classification Report
+
+Create a detailed classification report with per-class metrics:
+
+```python
+# Language name mapping
+idiomas = {
+    "es": "Español",
+    "fr": "Francés",
+    "de": "Alemán",
+    "it": "Italiano",
+    "pt": "Portugués",
+    "nl": "Neerlandés",
+    "sv": "Sueco"
+}
+
+# Generate classification report
+report = classification_report(
+    y_test,
+    y_pred,
+    target_names=[idiomas[lang] for lang in sorted(idiomas.keys())],
+    digits=4
+)
+
+print("\n=== Classification Report ===")
+print(report)
+```
+
+Example output:
+```
+=== Classification Report ===
+              precision    recall  f1-score   support
+
+      Alemán     0.9856    0.9865    0.9860      1018
+     Español     0.9886    0.9886    0.9886      1042
+     Francés     0.9905    0.9905    0.9905      1050
+    Italiano     0.9899    0.9826    0.9862      1089
+  Neerlandés     0.9809    0.9828    0.9819      1027
+   Portugués     0.9890    0.9890    0.9890      1086
+       Sueco     0.9817    0.9827    0.9822      1038
+
+    accuracy                         0.9872      7350
+   macro avg     0.9866    0.9861    0.9863      7350
+weighted avg     0.9872    0.9872    0.9872      7350
+```
+
+### Step 4: Create Confusion Matrix
+
+Visualize model performance with a confusion matrix:
+
+```python
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+# Compute confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+
+# Calculate percentages
+cm_percent = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis] * 100
+
+# Plot confusion matrix
+plt.figure(figsize=(12, 10))
+sns.heatmap(
+    cm_percent,
+    annot=True,
+    fmt='.2f',
+    cmap='Blues',
+    xticklabels=[idiomas[lang] for lang in sorted(idiomas.keys())],
+    yticklabels=[idiomas[lang] for lang in sorted(idiomas.keys())],
+    cbar_kws={'label': 'Percentage (%)'}
+)
+
+plt.title('Confusion Matrix - Language Detection\n(Percentage of True Labels)',
+          fontsize=14, pad=20)
+plt.xlabel('Predicted Language', fontsize=12)
+plt.ylabel('True Language', fontsize=12)
+plt.xticks(rotation=45, ha='right')
+plt.yticks(rotation=0)
+plt.tight_layout()
+plt.savefig('confusion_matrix.png', dpi=300, bbox_inches='tight')
+plt.show()
+
+print("Confusion matrix saved to 'confusion_matrix.png'")
+```
+
+<Tip>
+The diagonal represents correct predictions. High off-diagonal values indicate confusion between specific language pairs (e.g., Spanish and Portuguese).
+</Tip>
+
+### Step 5: Analyze Errors
+
+Identify and analyze misclassified examples:
+
+```python
+# Find misclassified samples
+errors = df_test[y_test != y_pred].copy()
+errors['predicted'] = y_pred[y_test != y_pred]
+errors['true_label'] = y_test[y_test != y_pred]
+
+print(f"\nTotal errors: {len(errors)} out of {len(y_test)}")
+print(f"Error rate: {len(errors)/len(y_test)*100:.2f}%")
+
+# Show error examples
+print("\n=== Sample Errors ===")
+for idx, row in errors.head(10).iterrows():
+    print(f"\nText: {row['texto']}")
+    print(f"True: {idiomas[row['true_label']]} | "
+          f"Predicted: {idiomas[row['predicted']]}")
+```
+
+### Step 6: Per-Language Performance
+
+Analyze performance for each language individually:
+
+```python
+import pandas as pd
+
+# Calculate per-language metrics
+precision, recall, f1, support = precision_recall_fscore_support(
+    y_test, y_pred, average=None
+)
+
+# Create performance DataFrame
+lang_codes = sorted(idiomas.keys())
+perf_df = pd.DataFrame({
+    'Language': [idiomas[lang] for lang in lang_codes],
+    'Precision': precision,
+    'Recall': recall,
+    'F1-Score': f1,
+    'Support': support
+})
+
+print("\n=== Per-Language Performance ===")
+print(perf_df.to_string(index=False))
+
+# Visualize
+perf_df.set_index('Language')[['Precision', 'Recall', 'F1-Score']].plot(
+    kind='bar',
+    figsize=(12, 6),
+    rot=45
+)
+plt.title('Performance Metrics by Language', fontsize=14)
+plt.ylabel('Score', fontsize=12)
+plt.ylim([0.95, 1.0])
+plt.legend(loc='lower right')
+plt.grid(axis='y', alpha=0.3)
+plt.tight_layout()
+plt.savefig('per_language_performance.png', dpi=300)
+plt.show()
+```
+
+</Steps>
+
+## Advanced Evaluation
+
+### Cross-Validation
+
+Use k-fold cross-validation for more robust evaluation:
+
+```python
+from sklearn.model_selection import cross_val_score, cross_validate
+
+# Prepare full dataset
+X_full = vectorizer.transform(df['texto'])
+y_full = df['idioma']
+
+# Perform 5-fold cross-validation
+scoring = ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro']
+
+cv_results = cross_validate(
+    model,
+    X_full,
+    y_full,
+    cv=5,
+    scoring=scoring,
+    return_train_score=True
+)
+
+print("\n=== Cross-Validation Results ===")
+for metric in scoring:
+    train_scores = cv_results[f'train_{metric}']
+    test_scores = cv_results[f'test_{metric}']
+    print(f"\n{metric.upper()}:")
+    print(f"  Train: {train_scores.mean():.4f} (+/- {train_scores.std():.4f})")
+    print(f"  Test:  {test_scores.mean():.4f} (+/- {test_scores.std():.4f})")
+```
+
+### Learning Curves
+
+Visualize how performance improves with more training data:
+
+```python
+from sklearn.model_selection import learning_curve
+
+train_sizes, train_scores, val_scores = learning_curve(
+    model,
+    X_full,
+    y_full,
+    train_sizes=np.linspace(0.1, 1.0, 10),
+    cv=3,
+    scoring='accuracy',
+    n_jobs=-1
+)
+
+# Plot learning curves
+plt.figure(figsize=(10, 6))
+plt.plot(train_sizes, train_scores.mean(axis=1), label='Training score')
+plt.plot(train_sizes, val_scores.mean(axis=1), label='Validation score')
+plt.fill_between(
+    train_sizes,
+    train_scores.mean(axis=1) - train_scores.std(axis=1),
+    train_scores.mean(axis=1) + train_scores.std(axis=1),
+    alpha=0.1
+)
+plt.fill_between(
+    train_sizes,
+    val_scores.mean(axis=1) - val_scores.std(axis=1),
+    val_scores.mean(axis=1) + val_scores.std(axis=1),
+    alpha=0.1
+)
+
+plt.xlabel('Training Set Size', fontsize=12)
+plt.ylabel('Accuracy', fontsize=12)
+plt.title('Learning Curves', fontsize=14)
+plt.legend(loc='lower right')
+plt.grid(alpha=0.3)
+plt.tight_layout()
+plt.savefig('learning_curves.png', dpi=300)
+plt.show()
+```
+
+<Warning>
+If training and validation curves diverge significantly, your model may be overfitting. Consider:
+- Reducing model complexity
+- Adding more training data
+- Applying regularization
+</Warning>
+
+### Feature Importance (for tree-based models)
+
+For Random Forest models, analyze feature importance:
+
+```python
+if hasattr(model, 'feature_importances_'):
+    # Get feature names
+    feature_names = vectorizer.get_feature_names_out()
+    
+    # Get importance scores
+    importances = model.feature_importances_
+    
+    # Sort by importance
+    indices = np.argsort(importances)[::-1][:20]
+    
+    # Plot top 20 features
+    plt.figure(figsize=(12, 8))
+    plt.barh(range(20), importances[indices])
+    plt.yticks(range(20), [feature_names[i] for i in indices])
+    plt.xlabel('Importance')
+    plt.title('Top 20 Most Important Features')
+    plt.tight_layout()
+    plt.savefig('feature_importance.png', dpi=300)
+    plt.show()
+```
+
+## Evaluation Checklist
+
+<Check>
+- [ ] Overall accuracy > 95%
+- [ ] Per-language F1-scores > 0.95
+- [ ] No language with significantly lower performance
+- [ ] Confusion matrix shows clear diagonal pattern
+- [ ] Cross-validation scores are consistent
+- [ ] No overfitting (train/val curves close)
+</Check>
+
+## Benchmarking
+
+Compare your model against baselines:
+
+```python
+from sklearn.dummy import DummyClassifier
+
+# Random baseline
+random_clf = DummyClassifier(strategy='uniform', random_state=42)
+random_clf.fit(X_train, y_train)
+random_acc = accuracy_score(y_test, random_clf.predict(X_test))
+
+# Most frequent baseline
+most_frequent_clf = DummyClassifier(strategy='most_frequent')
+most_frequent_clf.fit(X_train, y_train)
+freq_acc = accuracy_score(y_test, most_frequent_clf.predict(X_test))
+
+print("\n=== Baseline Comparison ===")
+print(f"Random classifier: {random_acc:.4f}")
+print(f"Most frequent:     {freq_acc:.4f}")
+print(f"Your model:        {accuracy:.4f}")
+print(f"Improvement:       {(accuracy - max(random_acc, freq_acc))*100:.2f}%")
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Training" icon="graduation-cap" href="/guides/training">
+    Go back to improve your training process
+  </Card>
+  <Card title="Inference" icon="rocket" href="/guides/inference">
+    Deploy your model for real-world predictions
+  </Card>
+</CardGroup>

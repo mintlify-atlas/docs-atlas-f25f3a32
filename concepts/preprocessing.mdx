@@ -1,0 +1,338 @@
+---
+title: 'Preprocessing'
+description: 'Text cleaning and normalization techniques for language detection'
+---
+
+## Text Preprocessing Pipeline
+
+Preprocessing transforms raw text into a clean, normalized format suitable for machine learning. For language detection, preprocessing decisions significantly impact model performance.
+
+<Note>
+Unlike many NLP tasks, **minimal preprocessing** often works best for language identification. Language-specific characters, capitalization patterns, and even stopwords contain valuable discriminative information.
+</Note>
+
+## Preprocessing Steps
+
+The preprocessing pipeline applies these transformations:
+
+<Steps>
+  <Step title="Lowercasing">
+    Convert all text to lowercase for consistency (optional, depending on evaluation)
+  </Step>
+  
+  <Step title="Whitespace Normalization">
+    Remove extra spaces, tabs, and newlines
+  </Step>
+  
+  <Step title="Special Character Handling">
+    Decide whether to keep or remove punctuation and accents
+  </Step>
+  
+  <Step title="Stopword Removal">
+    Optionally remove common words (requires language-aware processing)
+  </Step>
+</Steps>
+
+## Implementation
+
+### Basic Preprocessing
+
+Minimal preprocessing that preserves language-specific features:
+
+```python
+import re
+
+def preprocess_text(text):
+    """
+    Basic preprocessing for language detection.
+    Preserves accents and language-specific characters.
+    """
+    # Convert to lowercase
+    text = text.lower()
+    
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text)
+    
+    # Strip leading/trailing whitespace
+    text = text.strip()
+    
+    return text
+
+# Example usage
+original = "Reanudación del período de sesiones"
+processed = preprocess_text(original)
+print(processed)  # "reanudación del período de sesiones"
+```
+
+<Tip>
+Keeping accented characters (é, ñ, ö, etc.) is crucial for language detection as they are strong linguistic markers.
+</Tip>
+
+### Advanced Preprocessing Options
+
+For experimental comparison, you might test different preprocessing strategies:
+
+```python
+import string
+from typing import List, Optional
+
+def advanced_preprocess(
+    text: str,
+    remove_punctuation: bool = False,
+    remove_numbers: bool = False,
+    min_word_length: int = 1
+) -> str:
+    """
+    Advanced preprocessing with configurable options.
+    
+    Args:
+        text: Input text
+        remove_punctuation: Whether to remove punctuation marks
+        remove_numbers: Whether to remove numeric characters
+        min_word_length: Minimum word length to keep
+    
+    Returns:
+        Preprocessed text
+    """
+    # Lowercase
+    text = text.lower()
+    
+    # Remove punctuation (optional)
+    if remove_punctuation:
+        # Keep accented characters
+        text = ''.join(char for char in text 
+                      if char not in string.punctuation or char.isalpha())
+    
+    # Remove numbers (optional)
+    if remove_numbers:
+        text = re.sub(r'\d+', '', text)
+    
+    # Normalize whitespace
+    text = re.sub(r'\s+', ' ', text).strip()
+    
+    # Filter by word length (optional)
+    if min_word_length > 1:
+        words = text.split()
+        words = [w for w in words if len(w) >= min_word_length]
+        text = ' '.join(words)
+    
+    return text
+```
+
+### Stopword Removal
+
+Stopword removal requires careful consideration for language detection:
+
+```python
+from nltk.corpus import stopwords
+import nltk
+
+# Download stopwords (run once)
+nltk.download('stopwords')
+
+def remove_stopwords_multilang(text: str, language: str = None) -> str:
+    """
+    Remove stopwords if language is known.
+    
+    Note: For language DETECTION, we typically DON'T remove stopwords
+    during inference since the language is unknown. This function is
+    mainly for experimental analysis.
+    """
+    if language is None:
+        return text
+    
+    try:
+        stop_words = set(stopwords.words(language))
+        words = text.split()
+        filtered_words = [w for w in words if w not in stop_words]
+        return ' '.join(filtered_words)
+    except:
+        # Language not supported or other error
+        return text
+
+# Example: Analyzing stopword impact
+text_es = "el parlamento de europa tiene una sesión"
+text_en = "the european parliament has a session"
+
+print("Spanish without stopwords:", 
+      remove_stopwords_multilang(text_es, 'spanish'))
+# Output: "parlamento europa sesión"
+
+print("English without stopwords:", 
+      remove_stopwords_multilang(text_en, 'english'))
+# Output: "european parliament session"
+```
+
+<Warning>
+**For language detection**, removing stopwords is generally **not recommended**. Words like "el", "la", "der", "die", "le", "la" are among the **strongest indicators** of language. Removing them reduces model accuracy.
+</Warning>
+
+## Preprocessing Trade-offs
+
+### What to Keep vs. Remove
+
+<Tabs>
+  <Tab title="Recommended to Keep">
+    <Check>**Accented characters** - Strong language markers (é, ñ, ö, å, etc.)</Check>
+    <Check>**Stopwords** - Common words highly discriminative across languages</Check>
+    <Check>**Capitalization** - Optional, but can provide weak signals</Check>
+    <Check>**Common punctuation** - May contain language-specific patterns</Check>
+  </Tab>
+  
+  <Tab title="Consider Removing">
+    <Info>**Extra whitespace** - Normalize for consistency</Info>
+    <Info>**Rare special characters** - May be noise (depends on domain)</Info>
+    <Info>**HTML/markup** - Remove if present in web-scraped data</Info>
+  </Tab>
+  
+  <Tab title="Usually Remove">
+    <Warning>**URLs** - Not language-discriminative</Warning>
+    <Warning>**Email addresses** - Follow generic patterns</Warning>
+    <Warning>**Excessive numbers** - Language-neutral in many cases</Warning>
+  </Tab>
+</Tabs>
+
+## Batch Preprocessing
+
+Preprocess the entire dataset efficiently:
+
+```python
+import pandas as pd
+from tqdm import tqdm
+
+# Enable progress bar for pandas
+tqdm.pandas()
+
+def preprocess_dataset(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Preprocess all text in the dataset.
+    
+    Args:
+        df: DataFrame with 'texto' column
+    
+    Returns:
+        DataFrame with added 'texto_clean' column
+    """
+    # Apply preprocessing with progress bar
+    df['texto_clean'] = df['texto'].progress_apply(preprocess_text)
+    
+    # Remove any empty texts
+    original_len = len(df)
+    df = df[df['texto_clean'].str.strip() != '']
+    removed = original_len - len(df)
+    
+    if removed > 0:
+        print(f"Removed {removed} empty texts after preprocessing")
+    
+    return df
+
+# Usage
+df = pd.read_csv('dataset/europarl_multilang_dataset_7000.csv')
+df = preprocess_dataset(df)
+
+print(f"Preprocessed {len(df)} samples")
+print(df[['texto', 'texto_clean', 'idioma']].head())
+```
+
+## Quality Checks
+
+Validate preprocessing results:
+
+```python
+def validate_preprocessing(df: pd.DataFrame) -> None:
+    """
+    Perform quality checks on preprocessed data.
+    """
+    print("Preprocessing Quality Report")
+    print("="*50)
+    
+    # Check for empty texts
+    empty_count = (df['texto_clean'].str.strip() == '').sum()
+    print(f"Empty texts: {empty_count}")
+    
+    # Check text length distribution
+    df['text_length'] = df['texto_clean'].str.split().str.len()
+    print(f"\nText length statistics (words):")
+    print(df['text_length'].describe())
+    
+    # Check for potential issues
+    very_short = (df['text_length'] < 3).sum()
+    print(f"\nVery short texts (<3 words): {very_short}")
+    
+    # Sample preprocessed texts per language
+    print("\nSample preprocessed texts:")
+    for lang in df['idioma'].unique():
+        sample = df[df['idioma'] == lang]['texto_clean'].iloc[0]
+        print(f"{lang}: {sample[:80]}...")
+
+validate_preprocessing(df)
+```
+
+**Example output:**
+```
+Preprocessing Quality Report
+==================================================
+Empty texts: 0
+
+Text length statistics (words):
+count    49000.00
+mean        15.23
+std          8.45
+min          1.00
+25%          9.00
+50%         14.00
+75%         20.00
+max         87.00
+
+Very short texts (<3 words): 234
+
+Sample preprocessed texts:
+es: reanudación del período de sesiones...
+de: wiederaufnahme der sitzungsperiode...
+fr: reprise de la session...
+```
+
+## Best Practices
+
+<Card title="Minimal is Better" icon="filter">
+  For language detection, **less preprocessing is often more effective**. Preserve linguistic features that distinguish languages.
+</Card>
+
+<Card title="Experiment and Evaluate" icon="flask">
+  Test different preprocessing strategies and compare model performance. What works for one task may not work for another.
+</Card>
+
+<Card title="Document Your Choices" icon="book">
+  Record which preprocessing steps you applied. This is crucial for reproducibility and for preprocessing new data at inference time.
+</Card>
+
+<Card title="Match Training and Inference" icon="arrows-left-right">
+  Apply the **exact same preprocessing** to training data and new text during prediction. Mismatches cause performance degradation.
+</Card>
+
+## Preprocessing vs. Performance
+
+Comparative analysis of preprocessing impact:
+
+| Preprocessing Strategy | Accuracy | Notes |
+|------------------------|----------|-------|
+| Minimal (lowercase + whitespace) | **98.5%** | Best performance, preserves features |
+| + Remove punctuation | 97.2% | Loses some language patterns |
+| + Remove stopwords | 89.3% | Significant performance drop |
+| + Remove accents | 85.1% | Loses critical language markers |
+
+<Info>
+These are illustrative values. Actual performance depends on your specific dataset, model, and languages.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Vectorization" icon="vector-square" href="/concepts/vectorization">
+    Learn how cleaned text is converted to numerical features
+  </Card>
+  
+  <Card title="Back to Overview" icon="arrow-left" href="/concepts/overview">
+    Review the complete pipeline
+  </Card>
+</CardGroup>

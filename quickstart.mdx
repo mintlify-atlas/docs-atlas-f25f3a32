@@ -1,80 +1,372 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: 'Quick Start'
+description: 'Get started with language detection in minutes using pre-trained models'
 ---
 
-## Get started in three steps
+## Installation and Setup
 
-Get your documentation site running locally and make your first customization.
+Get up and running with the Language Detection System in just a few steps.
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
+<Steps>
+  <Step title="Clone the Repository">
+    Start by cloning the project repository:
     
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
+    ```bash
+    git clone <repository-url>
+    cd languageDetection
+    ```
+  </Step>
+
+  <Step title="Install Dependencies">
+    Install the required Python packages:
     
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
+    ```bash
+    pip install tensorflow keras scikit-learn pandas numpy joblib
+    ```
     
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Note>
+    The system requires Python 3.7+ and TensorFlow 2.x for deep learning models. Traditional ML models only need scikit-learn.
+    </Note>
+  </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+  <Step title="Load Pre-trained Models">
+    The repository includes pre-trained models ready for immediate use:
+    
+    - `naive_bayes_alpha_0.5.zip` - Fast, lightweight ML classifier
+    - `modelo_lstm.keras` - LSTM neural network
+    - `modelo_bilstm.keras` - Bidirectional LSTM (best accuracy)
+    - `mejor_modelo_recurrente.keras` - Optimized recurrent model
+  </Step>
+</Steps>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+## Using Pre-trained Models
 
-### Step 3: Go live
+### Option 1: Traditional ML (Naive Bayes)
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+For fast, lightweight inference with minimal dependencies:
 
-## Next steps
+```python
+import joblib
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-Now that you have your docs running, explore these key features:
+# Load the pre-trained model
+model = joblib.load('modelos/naive_bayes_alpha_0.5.zip')
+
+# Initialize the vectorizer (must match training configuration)
+vectorizer = TfidfVectorizer(
+    max_features=10000,
+    ngram_range=(1, 3),
+    analyzer='char'
+)
+
+# Note: You'll need to fit the vectorizer on your training data
+# or load a pre-fitted vectorizer if saved separately
+```
+
+<Tip>
+Character-level n-grams (1-3) work particularly well for language detection as they capture language-specific patterns like diacritics, common letter combinations, and morphological features.
+</Tip>
+
+### Option 2: Deep Learning (BiLSTM)
+
+For maximum accuracy with neural networks:
+
+```python
+import tensorflow as tf
+from tensorflow import keras
+import pickle
+
+# Load the BiLSTM model
+model = keras.models.load_model('modelos/modelo_bilstm.keras')
+
+# Load tokenizer configuration
+with open('modelos/mejor_modelo_recurrente_config.pkl', 'rb') as f:
+    config = pickle.load(f)
+    tokenizer = config['tokenizer']
+    max_length = config['max_length']
+
+print(f"Model loaded: {model.summary()}")
+print(f"Max sequence length: {max_length}")
+```
+
+<CodeGroup>
+
+```python Traditional ML
+import joblib
+import pandas as pd
+from sklearn.pipeline import make_pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+
+# Load or create a complete pipeline
+try:
+    # Load pre-trained pipeline
+    pipeline = joblib.load('modelos/naive_bayes_alpha_0.5.zip')
+except:
+    # Or build your own
+    vectorizer = TfidfVectorizer(
+        max_features=10000,
+        ngram_range=(1, 3),
+        analyzer='char'
+    )
+    classifier = MultinomialNB(alpha=0.5)
+    pipeline = make_pipeline(vectorizer, classifier)
+
+# Make predictions
+texts = [
+    "Buenos días, ¿cómo está usted?",
+    "Bonjour, comment allez-vous?",
+    "Guten Morgen, wie geht es Ihnen?"
+]
+
+predictions = pipeline.predict(texts)
+print(predictions)  # ['es', 'fr', 'de']
+```
+
+```python Deep Learning
+import tensorflow as tf
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import pickle
+import numpy as np
+
+# Load the BiLSTM model
+model = load_model('modelos/modelo_bilstm.keras')
+
+# Load tokenizer configuration
+with open('modelos/mejor_modelo_recurrente_config.pkl', 'rb') as f:
+    config = pickle.load(f)
+    tokenizer = config['tokenizer']
+    max_length = config['max_length']
+
+# Language labels (ensure this matches your training)
+languages = ['de', 'en', 'es', 'fr', 'it', 'pt', 'sv']
+
+# Prepare text for prediction
+texts = [
+    "This is a test sentence",
+    "Esto es una prueba",
+    "Ceci est un test"
+]
+
+# Tokenize and pad sequences
+sequences = tokenizer.texts_to_sequences(texts)
+padded = pad_sequences(sequences, maxlen=max_length, padding='post')
+
+# Predict
+predictions = model.predict(padded)
+predicted_langs = [languages[np.argmax(pred)] for pred in predictions]
+
+print(predicted_langs)  # ['en', 'es', 'fr']
+```
+
+</CodeGroup>
+
+## Complete Example
+
+Here's a complete working example that combines everything:
+
+```python
+import numpy as np
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+import pickle
+
+class LanguageDetector:
+    """Language detection using pre-trained BiLSTM model."""
+    
+    def __init__(self, model_path, config_path):
+        """Initialize the detector with model and configuration.
+        
+        Args:
+            model_path: Path to the .keras model file
+            config_path: Path to the .pkl configuration file
+        """
+        # Load model
+        self.model = keras.models.load_model(model_path)
+        
+        # Load configuration
+        with open(config_path, 'rb') as f:
+            config = pickle.load(f)
+            self.tokenizer = config['tokenizer']
+            self.max_length = config['max_length']
+        
+        # Language mapping
+        self.languages = ['de', 'en', 'es', 'fr', 'it', 'pt', 'sv']
+        self.language_names = {
+            'de': 'German',
+            'en': 'English',
+            'es': 'Spanish',
+            'fr': 'French',
+            'it': 'Italian',
+            'pt': 'Portuguese',
+            'sv': 'Swedish'
+        }
+    
+    def predict(self, texts):
+        """Predict languages for a list of texts.
+        
+        Args:
+            texts: List of text strings or single string
+            
+        Returns:
+            List of language codes or single language code
+        """
+        # Handle single string
+        single = isinstance(texts, str)
+        if single:
+            texts = [texts]
+        
+        # Tokenize and pad
+        sequences = self.tokenizer.texts_to_sequences(texts)
+        padded = pad_sequences(sequences, maxlen=self.max_length, padding='post')
+        
+        # Predict
+        predictions = self.model.predict(padded, verbose=0)
+        predicted_indices = np.argmax(predictions, axis=1)
+        predicted_langs = [self.languages[idx] for idx in predicted_indices]
+        
+        return predicted_langs[0] if single else predicted_langs
+    
+    def predict_with_confidence(self, text):
+        """Predict language with confidence scores.
+        
+        Args:
+            text: Input text string
+            
+        Returns:
+            Dictionary with language code, name, and confidence
+        """
+        # Tokenize and pad
+        sequences = self.tokenizer.texts_to_sequences([text])
+        padded = pad_sequences(sequences, maxlen=self.max_length, padding='post')
+        
+        # Get prediction probabilities
+        predictions = self.model.predict(padded, verbose=0)[0]
+        predicted_idx = np.argmax(predictions)
+        
+        lang_code = self.languages[predicted_idx]
+        confidence = float(predictions[predicted_idx])
+        
+        # Get top 3 predictions
+        top_3_idx = np.argsort(predictions)[-3:][::-1]
+        top_3 = [
+            {
+                'language': self.languages[idx],
+                'name': self.language_names[self.languages[idx]],
+                'confidence': float(predictions[idx])
+            }
+            for idx in top_3_idx
+        ]
+        
+        return {
+            'language': lang_code,
+            'name': self.language_names[lang_code],
+            'confidence': confidence,
+            'top_3': top_3
+        }
+
+# Usage example
+if __name__ == "__main__":
+    # Initialize detector
+    detector = LanguageDetector(
+        model_path='modelos/mejor_modelo_recurrente.keras',
+        config_path='modelos/mejor_modelo_recurrente_config.pkl'
+    )
+    
+    # Test with various texts
+    test_texts = [
+        "Hello, how are you today?",
+        "Bonjour, comment allez-vous aujourd'hui?",
+        "Hola, ¿cómo estás hoy?",
+        "Guten Tag, wie geht es Ihnen heute?",
+        "Ciao, come stai oggi?",
+        "Olá, como você está hoje?",
+        "Hej, hur mår du idag?"
+    ]
+    
+    print("=" * 60)
+    print("Language Detection Results")
+    print("=" * 60)
+    
+    for text in test_texts:
+        result = detector.predict_with_confidence(text)
+        print(f"\nText: {text}")
+        print(f"Detected: {result['name']} ({result['language']})")
+        print(f"Confidence: {result['confidence']:.2%}")
+        print(f"Top 3 predictions:")
+        for pred in result['top_3']:
+            print(f"  - {pred['name']}: {pred['confidence']:.2%}")
+```
+
+<Warning>
+Make sure the tokenizer configuration matches the one used during training. Loading the configuration from `mejor_modelo_recurrente_config.pkl` ensures consistency.
+</Warning>
+
+## Testing Your Setup
+
+Verify everything is working correctly:
+
+```python
+# Quick test
+detector = LanguageDetector(
+    'modelos/mejor_modelo_recurrente.keras',
+    'modelos/mejor_modelo_recurrente_config.pkl'
+)
+
+# Test detection
+test_cases = [
+    ("This is English", "en"),
+    ("Esto es español", "es"),
+    ("C'est français", "fr"),
+    ("Das ist Deutsch", "de")
+]
+
+for text, expected in test_cases:
+    predicted = detector.predict(text)
+    status = "✓" if predicted == expected else "✗"
+    print(f"{status} '{text}' -> {predicted} (expected: {expected})")
+```
+
+## Performance Considerations
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Traditional ML" icon="gauge-high">
+    **Speed**: ~1ms per prediction
+    
+    **Memory**: ~50MB model size
+    
+    **Best for**: Real-time applications, embedded systems, high-throughput scenarios
+  </Card>
+  
+  <Card title="Deep Learning" icon="brain-circuit">
+    **Speed**: ~10-50ms per prediction
+    
+    **Memory**: ~5-10MB model size
+    
+    **Best for**: Maximum accuracy, batch processing, applications where accuracy is critical
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Next Steps
+
+<Steps>
+  <Step title="Explore Model Architectures">
+    Learn about the different models and their trade-offs in the [Models Overview](/models/overview) section.
+  </Step>
+  
+  <Step title="Train Your Own Models">
+    Follow the [Training Guide](/guides/training) to train models on your own data or fine-tune existing ones.
+  </Step>
+  
+  <Step title="Integrate into Applications">
+    Check out the [Inference Guide](/guides/inference) for deploying models as web services.
+  </Step>
+</Steps>
+
+---
+
+<Tip>
+**Pro Tip**: For production deployments, consider wrapping the detector in a REST API using Flask or FastAPI, or deploying it as a serverless function for scalability.
+</Tip>

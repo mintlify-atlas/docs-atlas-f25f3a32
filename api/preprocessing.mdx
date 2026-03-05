@@ -1,0 +1,174 @@
+---
+title: 'Preprocessing API'
+description: 'Text preprocessing functions for language detection'
+---
+
+## Overview
+
+The preprocessing module provides functions to clean and normalize text data before vectorization. These functions are essential for improving model accuracy by standardizing input text.
+
+## Functions
+
+### preprocesar_texto
+
+Applies preprocessing to a single text string.
+
+```python
+def preprocesar_texto(texto: str) -> str
+```
+
+<ParamField path="texto" type="str" required>
+  The text string to preprocess
+</ParamField>
+
+<ResponseField name="return" type="str">
+  The preprocessed text string
+</ResponseField>
+
+#### Processing Steps
+
+The function applies the following transformations:
+
+1. **Lowercase conversion** - Converts all characters to lowercase
+2. **Number removal** - Removes all numeric digits using `r'\d+'` pattern
+3. **Whitespace normalization** - Removes extra whitespace and strips leading/trailing spaces
+
+#### Example
+
+```python
+from preprocessing import preprocesar_texto
+
+# Preprocess a single text
+text = "Hello World 123! This   has   extra spaces."
+processed = preprocesar_texto(text)
+print(processed)
+# Output: "hello world ! this has extra spaces."
+```
+
+---
+
+### preprocesa_dataset
+
+Applies preprocessing to an entire dataset stored in a pandas DataFrame.
+
+```python
+def preprocesa_dataset(dataframe: pd.DataFrame) -> pd.DataFrame
+```
+
+<ParamField path="dataframe" type="pd.DataFrame" required>
+  DataFrame containing texts in a column named `'texto'`
+</ParamField>
+
+<ResponseField name="return" type="pd.DataFrame">
+  A copy of the input DataFrame with an additional column `'texto_procesado'` containing preprocessed texts
+</ResponseField>
+
+#### Behavior
+
+- Creates a copy of the input DataFrame (does not modify the original)
+- Applies `preprocesar_texto()` to each text in the `'texto'` column
+- Stores results in a new column called `'texto_procesado'`
+- Preserves all original columns
+
+#### Example
+
+<CodeGroup>
+```python Basic Usage
+import pandas as pd
+from preprocessing import preprocesa_dataset
+
+# Create sample dataset
+df = pd.DataFrame({
+    'texto': [
+        'Jag tror att hon efter sitt tal kommer att få applåder.',
+        'Den stora frågan är snarare under vilket budget 2024.',
+        'De structurele problemen waardoor Europa een hoog werkloosheidscijfer kent.'
+    ],
+    'idioma': ['sv', 'sv', 'nl']
+})
+
+# Preprocess the dataset
+df_processed = preprocesa_dataset(df)
+print(df_processed[['texto', 'texto_procesado']].head())
+```
+
+```python Training Pipeline
+# Preprocess train, validation, and test sets
+df_train_processed = preprocesa_dataset(df_train)
+df_val_processed = preprocesa_dataset(df_val)
+df_test_processed = preprocesa_dataset(df_test)
+
+# Extract preprocessed texts for training
+X_train = df_train_processed['texto_procesado']
+y_train = df_train_processed['idioma']
+```
+</CodeGroup>
+
+---
+
+## Best Practices
+
+### When to Preprocess
+
+Preprocessing is recommended for:
+- **Character-based models** - Reduces vocabulary size and improves n-gram matching
+- **Word-based models** - Standardizes word forms and reduces sparsity
+- **Memory-constrained environments** - Reduces feature space dimensionality
+
+### Preprocessing Considerations
+
+For language detection tasks:
+
+- **Keep punctuation** - Some languages have distinctive punctuation patterns
+- **Remove numbers** - Numbers are language-agnostic and add noise
+- **Lowercase only** - Case information is generally not distinctive for language detection
+- **Preserve special characters** - Accented characters (á, é, í, ó, ú, ü, ñ) are important language markers
+
+### Example: Complete Preprocessing Pipeline
+
+```python
+import pandas as pd
+import re
+
+def preprocesar_texto(texto):
+    """
+    Aplica preprocesamiento a un texto.
+    
+    Args:
+        texto (str): Texto a procesar.
+    
+    Returns:
+        str: Texto preprocesado.
+    """
+    text = texto.lower()  # convertimos a minusculas
+    text = re.sub(r'\d+', '', text)  # eliminamos numeros
+    text = re.sub(r'\s+', ' ', text).strip()  # eliminamos espacios en blanco innecesarios
+    return text
+
+def preprocesa_dataset(dataframe):
+    """
+    Aplica preprocesamiento a todo un dataset.
+    
+    Args:
+        dataframe (DataFrame): DataFrame con textos a procesar en la columna 'texto'
+    
+    Returns:
+        DataFrame: DataFrame con textos preprocesados en la columna 'texto_procesado'
+    """
+    df_procesado = dataframe.copy()
+    df_procesado['texto_procesado'] = df_procesado['texto'].apply(preprocesar_texto)
+    return df_procesado
+
+# Usage
+df_train_processed = preprocesa_dataset(df_train)
+df_val_processed = preprocesa_dataset(df_val)
+df_test_processed = preprocesa_dataset(df_test)
+```
+
+---
+
+## Related Documentation
+
+- [Vectorization API](/api/vectorization) - Convert preprocessed text to numerical features
+- [Models API](/api/models) - Train classifiers on vectorized data
+- [Training Guide](/guides/training) - Build end-to-end language detection systems
