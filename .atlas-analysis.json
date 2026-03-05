@@ -1,0 +1,84 @@
+{
+  "projectType": "ai-ml",
+  "projectName": "Language Detection System",
+  "projectDescription": "Automatic language identification system using Europarl Parallel Corpus with traditional ML and Deep Learning models",
+  "theme": "aspen",
+  "primaryColor": "#3B82F6",
+  "lightColor": "#60A5FA",
+  "darkColor": "#1E40AF",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "pages": [
+              "concepts/overview",
+              "concepts/dataset",
+              "concepts/preprocessing",
+              "concepts/vectorization"
+            ]
+          },
+          {
+            "group": "Models",
+            "pages": [
+              "models/overview",
+              "models/traditional-ml",
+              "models/deep-learning",
+              "models/comparison"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/training",
+              "guides/evaluation",
+              "guides/inference"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Pipeline",
+            "pages": [
+              "api/preprocessing",
+              "api/vectorization",
+              "api/models"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Multi-language detection for 7 European languages using Europarl corpus",
+    "Traditional ML models: Naive Bayes, SVM, Random Forest",
+    "Deep Learning models: LSTM and Bidirectional LSTM",
+    "TF-IDF vectorization for text representation",
+    "Complete ML pipeline from data preprocessing to model inference",
+    "Comprehensive model comparison and evaluation"
+  ],
+  "publicApiSurface": [
+    "Data Loading & ETL Pipeline",
+    "Text Preprocessing (tokenization, cleaning, normalization)",
+    "TF-IDF Vectorization",
+    "Naive Bayes Classifier (alpha=0.5)",
+    "SVM Classifier",
+    "Random Forest Classifier",
+    "LSTM Model",
+    "Bidirectional LSTM Model",
+    "Model Evaluation & Metrics",
+    "Language Detection Pipeline"
+  ]
+}
